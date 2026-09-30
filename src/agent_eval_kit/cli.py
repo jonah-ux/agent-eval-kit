@@ -1,5 +1,48 @@
-import argparse,json,subprocess,time,shlex
+import argparse
+import json
+import shlex
+import subprocess
+import time
+
+
+def _parser():
+    parser = argparse.ArgumentParser(
+        prog="agent-eval",
+        description="Run a small command fixture and emit an agent-eval/v1 scorecard.",
+    )
+    commands = parser.add_subparsers(dest="action", required=True)
+    run = commands.add_parser("run", help="evaluate one command against a JSON fixture")
+    run.add_argument("fixture", help="path to the JSON fixture")
+    run.add_argument("--command", dest="cmd", required=True, help="command to execute")
+    return parser
+
 
 def main(argv=None):
- p=argparse.ArgumentParser(prog="agent-eval"); p.add_argument("command",choices=["run"]); p.add_argument("fixture"); p.add_argument("--command",dest="cmd",required=True); a=p.parse_args(argv)
- f=json.load(open(a.fixture)); started=time.time(); cmd=a.cmd.replace("{task}",shlex.quote(f.get("task",""))); r=subprocess.run(cmd,shell=True,text=True,capture_output=True,timeout=f.get("timeout",30)); expected=f.get("expect_exit",0); ok=r.returncode==expected and all(x in r.stdout for x in f.get("expect_stdout",[])); out={"schema":"agent-eval/v1","ok":ok,"exit_code":r.returncode,"expected_exit":expected,"duration_ms":round((time.time()-started)*1000),"stdout":r.stdout,"stderr":r.stderr}; print(json.dumps(out,indent=2,sort_keys=True)); return 0 if ok else 1
+    args = _parser().parse_args(argv)
+    with open(args.fixture, encoding="utf-8") as handle:
+        fixture = json.load(handle)
+
+    started = time.time()
+    command = args.cmd.replace("{task}", shlex.quote(fixture.get("task", "")))
+    result = subprocess.run(
+        command,
+        shell=True,
+        text=True,
+        capture_output=True,
+        timeout=fixture.get("timeout", 30),
+    )
+    expected = fixture.get("expect_exit", 0)
+    ok = result.returncode == expected and all(
+        fragment in result.stdout for fragment in fixture.get("expect_stdout", [])
+    )
+    output = {
+        "schema": "agent-eval/v1",
+        "ok": ok,
+        "exit_code": result.returncode,
+        "expected_exit": expected,
+        "duration_ms": round((time.time() - started) * 1000),
+        "stdout": result.stdout,
+        "stderr": result.stderr,
+    }
+    print(json.dumps(output, indent=2, sort_keys=True))
+    return 0 if ok else 1
