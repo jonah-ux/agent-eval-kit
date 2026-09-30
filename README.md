@@ -29,6 +29,18 @@ The demo runs one fixture and prints an `agent-eval/v1` scorecard. For a real fi
 agent-eval run fixture.json --command 'printf {task}'
 ```
 
+## See it work
+
+The bundled demo produces a scorecard that a CI job or another agent can consume directly:
+
+```json
+{"schema":"agent-eval/v1","ok":true,"exit_code":0,"expected_exit":0,"stdout":"hello","stderr":"","duration_ms":21}
+```
+
+## Related tools
+
+Use [Agent Policy](https://github.com/jonah-ux/agent-policy) to decide whether an action is allowed, [Agent Proof](https://github.com/jonah-ux/agent-proof) to record what happened, and [Context Pack](https://github.com/jonah-ux/context-pack) to bound the input an agent sees.
+
 ## What it checks
 
 - The command exits with the expected status.
