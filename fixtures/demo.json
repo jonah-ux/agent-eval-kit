@@ -1,0 +1,12 @@
+{
+  "command": ["python3", "fixtures/demo_agent.py", "{task}"],
+  "tasks": ["alpha", "beta"],
+  "timeout": 5,
+  "working_directory": ".",
+  "expected_exit": 0,
+  "expected_stdout": ["task="],
+  "expected_files": [
+    {"path": "result.json", "contains": ["status"]}
+  ],
+  "redactions": ["secret=\\S+"]
+}

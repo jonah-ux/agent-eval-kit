@@ -1,0 +1,8 @@
+{
+  "command": ["python3", "fixtures/failing_agent.py", "{task}"],
+  "tasks": ["failure"],
+  "timeout": 5,
+  "working_directory": ".",
+  "expected_exit": 0,
+  "expected_stdout": ["never-present"]
+}

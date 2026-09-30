@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="260" viewBox="0 0 960 260" role="img" aria-labelledby="title desc">
+  <title id="title">agent-eval-kit workflow</title>
+  <desc id="desc">Configure a provider-neutral command, run bounded tasks in fresh workspaces, check evidence, and publish JSONL, scorecard, and JUnit reports.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1"><stop stop-color="#101827"/><stop offset="1" stop-color="#172b3f"/></linearGradient>
+    <linearGradient id="card" x1="0" x2="1"><stop stop-color="#203b50"/><stop offset="1" stop-color="#28586a"/></linearGradient>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#76d1c8"/></marker>
+  </defs>
+  <rect width="960" height="260" rx="24" fill="url(#bg)"/>
+  <text x="48" y="45" fill="#fff" font-family="system-ui,sans-serif" font-size="23" font-weight="700">A fixture is a proof pipeline</text>
+  <text x="48" y="70" fill="#a9c3d0" font-family="system-ui,sans-serif" font-size="14">same command shape · bounded execution · observable evidence</text>
+  <g font-family="system-ui,sans-serif">
+    <g transform="translate(48 105)"><rect width="170" height="95" rx="14" fill="url(#card)" stroke="#3d7180"/><circle cx="28" cy="29" r="16" fill="#76d1c8"/><text x="28" y="35" text-anchor="middle" fill="#10202d" font-weight="700">1</text><text x="55" y="35" fill="#fff" font-size="16" font-weight="700">Configure</text><text x="20" y="61" fill="#b9d5de" font-size="12">command + {task}</text><text x="20" y="79" fill="#b9d5de" font-size="12">checks + redactions</text></g>
+    <path d="M230 153 H265" stroke="#76d1c8" stroke-width="3" marker-end="url(#arrow)"/>
+    <g transform="translate(278 105)"><rect width="170" height="95" rx="14" fill="url(#card)" stroke="#3d7180"/><circle cx="28" cy="29" r="16" fill="#76d1c8"/><text x="28" y="35" text-anchor="middle" fill="#10202d" font-weight="700">2</text><text x="55" y="35" fill="#fff" font-size="16" font-weight="700">Execute</text><text x="20" y="61" fill="#b9d5de" font-size="12">fresh workspace</text><text x="20" y="79" fill="#b9d5de" font-size="12">timeout + capture</text></g>
+    <path d="M460 153 H495" stroke="#76d1c8" stroke-width="3" marker-end="url(#arrow)"/>
+    <g transform="translate(508 105)"><rect width="170" height="95" rx="14" fill="url(#card)" stroke="#3d7180"/><circle cx="28" cy="29" r="16" fill="#76d1c8"/><text x="28" y="35" text-anchor="middle" fill="#10202d" font-weight="700">3</text><text x="55" y="35" fill="#fff" font-size="16" font-weight="700">Evaluate</text><text x="20" y="61" fill="#b9d5de" font-size="12">exit · files · JSON</text><text x="20" y="79" fill="#b9d5de" font-size="12">deterministic score</text></g>
+    <path d="M690 153 H725" stroke="#76d1c8" stroke-width="3" marker-end="url(#arrow)"/>
+    <g transform="translate(738 105)"><rect width="174" height="95" rx="14" fill="url(#card)" stroke="#3d7180"/><circle cx="28" cy="29" r="16" fill="#76d1c8"/><text x="28" y="35" text-anchor="middle" fill="#10202d" font-weight="700">4</text><text x="55" y="35" fill="#fff" font-size="16" font-weight="700">Report</text><text x="20" y="61" fill="#b9d5de" font-size="12">JSONL + scorecard</text><text x="20" y="79" fill="#b9d5de" font-size="12">JUnit + redaction</text></g>
+  </g>
+</svg>

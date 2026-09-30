@@ -1,14 +1,31 @@
-name: ci
+name: CI
+
 on:
   push:
   pull_request:
+
 jobs:
   test:
-    runs-on: ubuntu-latest
+    name: ${{ matrix.os }} / Python ${{ matrix.python-version }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python-version: ['3.11', '3.12']
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-        with: {python-version: "3.11"}
-      - run: python -m pip install -e .
-      - run: python -m unittest discover -s tests
-      - run: python -m {module}.cli --help
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Run tests
+        run: python -m unittest discover -s tests -v
+      - name: Build distributions
+        run: |
+          python -m pip install --upgrade build
+          python -m build
+      - name: Verify installed demo
+        run: |
+          python -m venv "$RUNNER_TEMP/eak-venv"
+          "$RUNNER_TEMP/eak-venv/bin/python" -m pip install dist/*.whl
+          "$RUNNER_TEMP/eak-venv/bin/agent-eval" demo --output "$RUNNER_TEMP/eak-demo"

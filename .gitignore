@@ -1,6 +1,16 @@
 __pycache__/
 *.py[cod]
 *.egg-info/
+.pytest_cache/
+.coverage
 .venv/
 dist/
 build/
+eval-results/
+config-*-results/
+demo-results/
+*.swp
+.build-venv/
+.wheel-venv/
+.sdist-venv/
+installed-*-demo/
