@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agent_eval_kit"
+version = "0.1.0"
+description = "agent fixture evaluator"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {file = "LICENSE"}
+authors = [{name = "Jonah Helland"}]
+dependencies = []
+
+[project.scripts]
+agent-eval = "agent_eval_kit.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
