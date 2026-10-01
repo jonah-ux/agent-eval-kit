@@ -1,0 +1,288 @@
+"""Execution and comparison primitives for Agent Eval Kit.
+
+The module keeps command execution intentionally small and explicit.  It does
+not sandbox a command; callers are responsible for running untrusted work in
+an appropriate environment.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import shlex
+import subprocess
+import time
+from collections.abc import Mapping, Sequence
+from typing import Any
+
+
+MATRIX_SCHEMA = "agent-eval/matrix/v1"
+MAX_TRIALS = 100
+
+
+def _canonical_json(value: Any) -> str:
+    return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+
+
+def _sha256(value: str) -> str:
+    return hashlib.sha256(value.encode("utf-8")).hexdigest()
+
+
+def _text(value: Any) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, bytes):
+        return value.decode("utf-8", errors="replace")
+    return str(value)
+
+
+def _require_mapping(value: Any, label: str) -> Mapping[str, Any]:
+    if not isinstance(value, Mapping):
+        raise ValueError(f"{label} must be a JSON object")
+    return value
+
+
+def _require_nonempty_string(value: Any, label: str) -> str:
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(f"{label} must be a non-empty string")
+    return value
+
+
+def _expected_exit(fixture: Mapping[str, Any]) -> int:
+    expected = fixture.get("expect_exit", 0)
+    if isinstance(expected, bool) or not isinstance(expected, int):
+        raise ValueError("expect_exit must be an integer")
+    return expected
+
+
+def _timeout(fixture: Mapping[str, Any]) -> float:
+    timeout = fixture.get("timeout", 30)
+    if isinstance(timeout, bool) or not isinstance(timeout, (int, float)) or timeout <= 0:
+        raise ValueError("timeout must be a positive number")
+    return float(timeout)
+
+
+def _expected_stdout(fixture: Mapping[str, Any]) -> list[str]:
+    expected = fixture.get("expect_stdout", [])
+    if not isinstance(expected, list) or any(not isinstance(fragment, str) for fragment in expected):
+        raise ValueError("expect_stdout must be a list of strings")
+    return expected
+
+
+def evaluate_fixture(fixture: Mapping[str, Any], command: str) -> dict[str, Any]:
+    """Run one command fixture and return an ``agent-eval/v1`` scorecard."""
+
+    fixture = _require_mapping(fixture, "fixture")
+    command = _require_nonempty_string(command, "command")
+    task = fixture.get("task", "")
+    if not isinstance(task, str):
+        raise ValueError("task must be a string")
+    expected = _expected_exit(fixture)
+    expected_stdout = _expected_stdout(fixture)
+    timeout = _timeout(fixture)
+    rendered_command = command.replace("{task}", shlex.quote(task))
+
+    started = time.monotonic()
+    timed_out = False
+    try:
+        result = subprocess.run(
+            rendered_command,
+            shell=True,
+            text=True,
+            capture_output=True,
+            timeout=timeout,
+        )
+        exit_code: int | None = result.returncode
+        stdout = _text(result.stdout)
+        stderr = _text(result.stderr)
+    except subprocess.TimeoutExpired as exc:
+        timed_out = True
+        exit_code = None
+        stdout = _text(exc.stdout)
+        stderr = _text(exc.stderr)
+
+    duration_ms = round((time.monotonic() - started) * 1000)
+    ok = (
+        not timed_out
+        and exit_code == expected
+        and all(fragment in stdout for fragment in expected_stdout)
+    )
+    return {
+        "schema": "agent-eval/v1",
+        "ok": ok,
+        "exit_code": exit_code,
+        "expected_exit": expected,
+        "duration_ms": duration_ms,
+        "stdout": stdout,
+        "stderr": stderr,
+        "timed_out": timed_out,
+    }
+
+
+def _stats(durations: Sequence[int]) -> dict[str, int | float | None]:
+    if not durations:
+        return {"min_ms": None, "mean_ms": None, "max_ms": None}
+    return {
+        "min_ms": min(durations),
+        "mean_ms": round(sum(durations) / len(durations), 3),
+        "max_ms": max(durations),
+    }
+
+
+def _observation_fingerprint(scorecard: Mapping[str, Any]) -> str:
+    """Hash behavior fields while excluding elapsed time."""
+
+    observation = {
+        key: scorecard[key]
+        for key in ("schema", "ok", "exit_code", "expected_exit", "stdout", "stderr", "timed_out")
+    }
+    return _sha256(_canonical_json(observation))
+
+
+def _validate_matrix_plan(plan: Mapping[str, Any]) -> tuple[int, list[Mapping[str, Any]], list[Mapping[str, Any]]]:
+    plan = _require_mapping(plan, "matrix plan")
+    if plan.get("schema") != MATRIX_SCHEMA:
+        raise ValueError(f"matrix plan schema must be {MATRIX_SCHEMA}")
+
+    trials = plan.get("trials", 1)
+    if isinstance(trials, bool) or not isinstance(trials, int) or not 1 <= trials <= MAX_TRIALS:
+        raise ValueError(f"trials must be an integer from 1 to {MAX_TRIALS}")
+
+    fixtures = plan.get("fixtures")
+    candidates = plan.get("candidates")
+    if not isinstance(fixtures, list) or not fixtures:
+        raise ValueError("fixtures must be a non-empty list")
+    if not isinstance(candidates, list) or not candidates:
+        raise ValueError("candidates must be a non-empty list")
+
+    fixture_items: list[Mapping[str, Any]] = []
+    fixture_ids: set[str] = set()
+    for index, fixture in enumerate(fixtures):
+        item = _require_mapping(fixture, f"fixtures[{index}]")
+        fixture_id = _require_nonempty_string(item.get("id"), f"fixtures[{index}].id")
+        if fixture_id in fixture_ids:
+            raise ValueError(f"duplicate fixture id: {fixture_id}")
+        fixture_ids.add(fixture_id)
+        fixture_items.append(item)
+
+    candidate_items: list[Mapping[str, Any]] = []
+    candidate_ids: set[str] = set()
+    for index, candidate in enumerate(candidates):
+        item = _require_mapping(candidate, f"candidates[{index}]")
+        candidate_id = _require_nonempty_string(item.get("id"), f"candidates[{index}].id")
+        if candidate_id in candidate_ids:
+            raise ValueError(f"duplicate candidate id: {candidate_id}")
+        candidate_ids.add(candidate_id)
+        _require_nonempty_string(item.get("command"), f"candidates[{index}].command")
+        candidate_items.append(item)
+
+    return trials, fixture_items, candidate_items
+
+
+def evaluate_matrix(plan: Mapping[str, Any]) -> dict[str, Any]:
+    """Evaluate every candidate against every fixture for a fixed trial count.
+
+    The plan fingerprint is derived from canonical JSON so equivalent key
+    ordering produces the same identity.  Commands still run in the supplied
+    order, and every individual scorecard remains visible for inspection.
+    """
+
+    plan = _require_mapping(plan, "matrix plan")
+    trials, fixtures, candidates = _validate_matrix_plan(plan)
+    summaries: list[dict[str, Any]] = []
+    all_runs: list[dict[str, Any]] = []
+
+    for candidate in candidates:
+        candidate_id = str(candidate["id"])
+        command = str(candidate["command"])
+        case_summaries: list[dict[str, Any]] = []
+        candidate_runs: list[dict[str, Any]] = []
+        for fixture in fixtures:
+            fixture_id = str(fixture["id"])
+            runs: list[dict[str, Any]] = []
+            for trial in range(1, trials + 1):
+                scorecard = evaluate_fixture(fixture, command)
+                run = {"trial": trial, "scorecard": scorecard}
+                runs.append(run)
+                candidate_runs.append(run)
+                all_runs.append(
+                    {
+                        "candidate": candidate_id,
+                        "fixture": fixture_id,
+                        **run,
+                    }
+                )
+
+            durations = [int(run["scorecard"]["duration_ms"]) for run in runs]
+            observation_fingerprints = [
+                _observation_fingerprint(run["scorecard"]) for run in runs
+            ]
+            passed = sum(1 for run in runs if run["scorecard"]["ok"])
+            case_summaries.append(
+                {
+                    "id": fixture_id,
+                    "runs": len(runs),
+                    "passed": passed,
+                    "pass_rate": round(passed / len(runs), 4),
+                    "duration_ms": _stats(durations),
+                    "stable": len(set(observation_fingerprints)) == 1,
+                    "observations_sha256": _sha256(_canonical_json(observation_fingerprints)),
+                    "results": runs,
+                }
+            )
+
+        candidate_passed = sum(1 for run in candidate_runs if run["scorecard"]["ok"])
+        candidate_durations = [
+            int(run["scorecard"]["duration_ms"]) for run in candidate_runs
+        ]
+        candidate_observations = [
+            _observation_fingerprint(run["scorecard"]) for run in candidate_runs
+        ]
+        summaries.append(
+            {
+                "id": candidate_id,
+                "command": command,
+                "runs": len(candidate_runs),
+                "passed": candidate_passed,
+                "pass_rate": round(candidate_passed / len(candidate_runs), 4),
+                "duration_ms": _stats(candidate_durations),
+                "stable": all(case["stable"] for case in case_summaries),
+                "observations_sha256": _sha256(_canonical_json(candidate_observations)),
+                "cases": case_summaries,
+            }
+        )
+
+    ranked = sorted(
+        summaries,
+        key=lambda item: (
+            -float(item["pass_rate"]),
+            (
+                float("inf")
+                if item["duration_ms"]["mean_ms"] is None
+                else float(item["duration_ms"]["mean_ms"])
+            ),
+            str(item["id"]),
+        ),
+    )
+    ranking = [
+        {
+            "rank": rank,
+            "candidate": item["id"],
+            "pass_rate": item["pass_rate"],
+            "mean_duration_ms": item["duration_ms"]["mean_ms"],
+        }
+        for rank, item in enumerate(ranked, start=1)
+    ]
+    passed_runs = sum(1 for run in all_runs if run["scorecard"]["ok"])
+    return {
+        "schema": MATRIX_SCHEMA,
+        "ok": passed_runs == len(all_runs),
+        "plan_sha256": _sha256(_canonical_json(plan)),
+        "trials": trials,
+        "fixture_count": len(fixtures),
+        "candidate_count": len(candidates),
+        "runs": len(all_runs),
+        "passed": passed_runs,
+        "results": summaries,
+        "ranking": ranking,
+    }

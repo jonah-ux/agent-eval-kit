@@ -6,6 +6,7 @@ import unittest
 from pathlib import Path
 
 from agent_eval_kit.cli import main
+from agent_eval_kit.runner import evaluate_matrix
 
 
 class Smoke(unittest.TestCase):
@@ -29,6 +30,83 @@ class Smoke(unittest.TestCase):
                 result = main(["run", str(fixture), "--command", "printf {task}"])
         self.assertEqual(result, 0)
         self.assertEqual(json.loads(output.getvalue())["schema"], "agent-eval/v1")
+
+    def test_matrix_compares_candidates_across_repeated_trials(self):
+        with tempfile.TemporaryDirectory() as directory:
+            plan = Path(directory) / "plan.json"
+            plan.write_text(
+                json.dumps(
+                    {
+                        "schema": "agent-eval/matrix/v1",
+                        "trials": 2,
+                        "fixtures": [
+                            {"id": "greeting", "task": "hello", "expect_stdout": ["hello"]},
+                            {"id": "farewell", "task": "bye", "expect_stdout": ["bye"]},
+                        ],
+                        "candidates": [
+                            {"id": "echo", "command": "printf {task}"},
+                            {"id": "wrong", "command": "printf nope"},
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            output = io.StringIO()
+            with contextlib.redirect_stdout(output):
+                result = main(["matrix", str(plan)])
+
+        self.assertEqual(result, 1)
+        scorecard = json.loads(output.getvalue())
+        self.assertEqual(scorecard["schema"], "agent-eval/matrix/v1")
+        self.assertEqual(scorecard["runs"], 8)
+        self.assertEqual(scorecard["passed"], 4)
+        self.assertFalse(scorecard["ok"])
+        self.assertEqual(scorecard["ranking"][0]["candidate"], "echo")
+
+    def test_run_reports_timeout_as_a_failed_scorecard(self):
+        with tempfile.TemporaryDirectory() as directory:
+            fixture = Path(directory) / "fixture.json"
+            fixture.write_text(json.dumps({"timeout": 0.01}), encoding="utf-8")
+            output = io.StringIO()
+            with contextlib.redirect_stdout(output):
+                result = main(["run", str(fixture), "--command", "sleep 1"])
+
+        self.assertEqual(result, 1)
+        scorecard = json.loads(output.getvalue())
+        self.assertTrue(scorecard["timed_out"])
+        self.assertIsNone(scorecard["exit_code"])
+
+    def test_matrix_plan_fingerprint_ignores_object_key_order(self):
+        plan = {
+            "schema": "agent-eval/matrix/v1",
+            "trials": 1,
+            "fixtures": [{"id": "greeting", "task": "hello", "expect_stdout": ["hello"]}],
+            "candidates": [{"id": "echo", "command": "printf {task}"}],
+        }
+        reordered = {
+            "candidates": [{"command": "printf {task}", "id": "echo"}],
+            "fixtures": [{"expect_stdout": ["hello"], "task": "hello", "id": "greeting"}],
+            "trials": 1,
+            "schema": "agent-eval/matrix/v1",
+        }
+
+        self.assertEqual(
+            evaluate_matrix(plan)["plan_sha256"],
+            evaluate_matrix(reordered)["plan_sha256"],
+        )
+
+    def test_matrix_rejects_duplicate_candidate_ids(self):
+        plan = {
+            "schema": "agent-eval/matrix/v1",
+            "fixtures": [{"id": "greeting", "task": "hello"}],
+            "candidates": [
+                {"id": "same", "command": "printf {task}"},
+                {"id": "same", "command": "printf {task}"},
+            ],
+        }
+
+        with self.assertRaisesRegex(ValueError, "duplicate candidate id"):
+            evaluate_matrix(plan)
 
 
 if __name__=="__main__": unittest.main()

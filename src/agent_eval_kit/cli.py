@@ -1,48 +1,37 @@
 import argparse
 import json
-import shlex
-import subprocess
-import time
+
+from .runner import evaluate_fixture, evaluate_matrix
 
 
 def _parser():
     parser = argparse.ArgumentParser(
         prog="agent-eval",
-        description="Run a small command fixture and emit an agent-eval/v1 scorecard.",
+        description="Run reproducible command fixtures and emit agent-eval scorecards.",
     )
     commands = parser.add_subparsers(dest="action", required=True)
     run = commands.add_parser("run", help="evaluate one command against a JSON fixture")
     run.add_argument("fixture", help="path to the JSON fixture")
     run.add_argument("--command", dest="cmd", required=True, help="command to execute")
+    matrix = commands.add_parser(
+        "matrix",
+        help="compare multiple commands across repeated fixture trials",
+    )
+    matrix.add_argument("plan", help="path to an agent-eval/matrix/v1 plan")
     return parser
 
 
 def main(argv=None):
     args = _parser().parse_args(argv)
-    with open(args.fixture, encoding="utf-8") as handle:
-        fixture = json.load(handle)
+    if args.action == "run":
+        with open(args.fixture, encoding="utf-8") as handle:
+            fixture = json.load(handle)
+        output = evaluate_fixture(fixture, args.cmd)
+        print(json.dumps(output, indent=2, sort_keys=True))
+        return 0 if output["ok"] else 1
 
-    started = time.time()
-    command = args.cmd.replace("{task}", shlex.quote(fixture.get("task", "")))
-    result = subprocess.run(
-        command,
-        shell=True,
-        text=True,
-        capture_output=True,
-        timeout=fixture.get("timeout", 30),
-    )
-    expected = fixture.get("expect_exit", 0)
-    ok = result.returncode == expected and all(
-        fragment in result.stdout for fragment in fixture.get("expect_stdout", [])
-    )
-    output = {
-        "schema": "agent-eval/v1",
-        "ok": ok,
-        "exit_code": result.returncode,
-        "expected_exit": expected,
-        "duration_ms": round((time.time() - started) * 1000),
-        "stdout": result.stdout,
-        "stderr": result.stderr,
-    }
+    with open(args.plan, encoding="utf-8") as handle:
+        plan = json.load(handle)
+    output = evaluate_matrix(plan)
     print(json.dumps(output, indent=2, sort_keys=True))
-    return 0 if ok else 1
+    return 0 if output["ok"] else 1
