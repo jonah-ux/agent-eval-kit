@@ -1,5 +1,5 @@
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
-from .runner import evaluate_fixture, evaluate_matrix
+from .runner import evaluate_fixture, evaluate_matrix, evaluate_receipt
 
-__all__ = ["__version__", "evaluate_fixture", "evaluate_matrix"]
+__all__ = ["__version__", "evaluate_fixture", "evaluate_matrix", "evaluate_receipt"]

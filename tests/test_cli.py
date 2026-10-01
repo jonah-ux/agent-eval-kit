@@ -6,7 +6,7 @@ import unittest
 from pathlib import Path
 
 from agent_eval_kit.cli import main
-from agent_eval_kit.runner import evaluate_matrix
+from agent_eval_kit.runner import evaluate_matrix, evaluate_receipt, _receipt_sha256
 
 
 class Smoke(unittest.TestCase):
@@ -107,6 +107,45 @@ class Smoke(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, "duplicate candidate id"):
             evaluate_matrix(plan)
+
+    def test_receipt_import_verifies_integrity_without_rerun(self):
+        receipt = {
+            "schema": "agent-sandbox/v2",
+            "ok": True,
+            "exit_code": 0,
+            "timed_out": False,
+            "stdout": "hello\n",
+            "command_sha256": "a" * 64,
+        }
+        receipt["receipt_sha256"] = _receipt_sha256(receipt)
+        result = evaluate_receipt(receipt, expected_stdout=["hello"], require_integrity=True)
+        self.assertTrue(result["ok"])
+        self.assertEqual(result["schema"], "agent-eval/receipt/v1")
+        self.assertEqual(result["integrity"], "verified")
+
+        receipt["stdout"] = "tampered\n"
+        tampered = evaluate_receipt(receipt, expected_stdout=["hello"], require_integrity=True)
+        self.assertFalse(tampered["ok"])
+        self.assertEqual(tampered["integrity"], "mismatch")
+
+    def test_receipt_cli_emits_structured_scorecard(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "receipt.json"
+            receipt = {
+                "schema": "agent-sandbox/v2",
+                "ok": True,
+                "exit_code": 0,
+                "timed_out": False,
+                "stdout": "consumer\n",
+                "command_sha256": "b" * 64,
+            }
+            receipt["receipt_sha256"] = _receipt_sha256(receipt)
+            path.write_text(json.dumps(receipt), encoding="utf-8")
+            output = io.StringIO()
+            with contextlib.redirect_stdout(output):
+                result = main(["receipt", str(path), "--expect-stdout", "consumer", "--require-integrity"])
+        self.assertEqual(result, 0)
+        self.assertEqual(json.loads(output.getvalue())["schema"], "agent-eval/receipt/v1")
 
 
 if __name__=="__main__": unittest.main()

@@ -17,6 +17,7 @@ from typing import Any
 
 
 MATRIX_SCHEMA = "agent-eval/matrix/v1"
+RECEIPT_SCHEMA = "agent-eval/receipt/v1"
 MAX_TRIALS = 100
 
 
@@ -26,6 +27,11 @@ def _canonical_json(value: Any) -> str:
 
 def _sha256(value: str) -> str:
     return hashlib.sha256(value.encode("utf-8")).hexdigest()
+
+
+def _receipt_sha256(receipt: Mapping[str, Any]) -> str:
+    unsigned = {key: value for key, value in receipt.items() if key != "receipt_sha256"}
+    return _sha256(_canonical_json(unsigned))
 
 
 def _text(value: Any) -> str:
@@ -116,6 +122,60 @@ def evaluate_fixture(fixture: Mapping[str, Any], command: str) -> dict[str, Any]
         "stdout": stdout,
         "stderr": stderr,
         "timed_out": timed_out,
+    }
+
+
+def evaluate_receipt(
+    receipt: Mapping[str, Any],
+    *,
+    expected_exit: int = 0,
+    expected_stdout: Sequence[str] = (),
+    require_integrity: bool = False,
+) -> dict[str, Any]:
+    """Evaluate a saved ``agent-sandbox/v2`` receipt without rerunning a command."""
+
+    receipt = _require_mapping(receipt, "receipt")
+    source_schema = _require_nonempty_string(receipt.get("schema"), "receipt.schema")
+    if source_schema not in {"agent-sandbox/v1", "agent-sandbox/v2"}:
+        raise ValueError("receipt.schema must be agent-sandbox/v1 or agent-sandbox/v2")
+    if isinstance(expected_exit, bool) or not isinstance(expected_exit, int):
+        raise ValueError("expected_exit must be an integer")
+    fragments = list(expected_stdout)
+    if any(not isinstance(fragment, str) for fragment in fragments):
+        raise ValueError("expected_stdout must contain only strings")
+
+    actual_exit = receipt.get("exit_code")
+    if isinstance(actual_exit, bool) or not isinstance(actual_exit, int):
+        raise ValueError("receipt.exit_code must be an integer")
+    stdout = _text(receipt.get("stdout", ""))
+    actual_digest = receipt.get("receipt_sha256")
+    if actual_digest is None:
+        integrity = "unbound"
+    elif isinstance(actual_digest, str) and actual_digest == _receipt_sha256(receipt):
+        integrity = "verified"
+    else:
+        integrity = "mismatch"
+    stdout_matches = all(fragment in stdout for fragment in fragments)
+    ok = (
+        integrity != "mismatch"
+        and (not require_integrity or integrity == "verified")
+        and actual_exit == expected_exit
+        and stdout_matches
+        and not bool(receipt.get("timed_out", False))
+    )
+    return {
+        "schema": RECEIPT_SCHEMA,
+        "ok": ok,
+        "source_schema": source_schema,
+        "integrity": integrity,
+        "receipt_sha256": actual_digest,
+        "command_sha256": receipt.get("command_sha256"),
+        "exit_code": actual_exit,
+        "expected_exit": expected_exit,
+        "stdout_sha256": _sha256(stdout),
+        "expected_stdout": fragments,
+        "stdout_matches": stdout_matches,
+        "timed_out": bool(receipt.get("timed_out", False)),
     }
 
 
