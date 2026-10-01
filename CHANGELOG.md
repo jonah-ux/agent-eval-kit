@@ -1,6 +1,9 @@
 # Changelog
 
-## 0.2.0 - Unreleased
+## 0.3.0 - Unreleased
+
+- add `agent-eval/receipt/v1` scoring for integrity-bound `agent-sandbox/v2` receipts without rerunning commands
+- add receipt tamper refusal, CLI coverage, and interoperability docs
 
 - add `agent-eval/matrix/v1` plans for repeated candidate and fixture comparisons
 - emit canonical plan fingerprints, per-trial scorecards, behavior fingerprints, pass rates, latency summaries, and stable tie-break rankings

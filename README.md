@@ -74,6 +74,19 @@ fixture's repeated trials; duration changes do not make a behavior unstable.
 The command exits `1` when any trial fails, including a timeout. Matrix plans
 allow at most 100 trials to keep accidental evaluation explosions bounded.
 
+## Score saved sandbox receipts
+
+Agent Eval Kit can score a saved `agent-sandbox/v2` receipt without rerunning
+the command. It verifies the receipt digest, expected exit, timeout state, and
+selected stdout fragments, then emits `agent-eval/receipt/v1`:
+
+```bash
+agent-eval receipt receipt.json --expect-exit 0 --expect-stdout consumer --require-integrity
+```
+
+Execution and evaluation stay separate: Sandbox Run owns what ran, while Agent
+Eval owns whether the saved receipt satisfies a fixture contract.
+
 ## Related tools
 
 Use [Agent Policy](https://github.com/jonah-ux/agent-policy) to decide whether an action is allowed, [Agent Proof](https://github.com/jonah-ux/agent-proof) to record what happened, and [Context Pack](https://github.com/jonah-ux/context-pack) to bound the input an agent sees.
