@@ -96,12 +96,14 @@ def _execute(
     cwd: str | os.PathLike[str] | None = None,
     env: Mapping[str, str] | None = None,
     stdin: Any = None,
+    input_text: str | None = None,
 ) -> dict[str, Any]:
     """Run one shell command and capture its observable behavior.
 
     Returns ``exit_code`` (``None`` on timeout), ``stdout``, ``stderr``,
     ``timed_out`` and ``duration_ms``.  A timeout kills the whole process
-    group and is reported, not raised.
+    group and is reported, not raised.  ``input_text``, when given, is written
+    to the command's stdin (and overrides ``stdin``).
     """
 
     started = time.monotonic()
@@ -110,7 +112,7 @@ def _execute(
         rendered_command,
         shell=True,
         text=True,
-        stdin=stdin,
+        stdin=subprocess.PIPE if input_text is not None else stdin,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         start_new_session=True,
@@ -118,7 +120,7 @@ def _execute(
         env=None if env is None else dict(env),
     )
     try:
-        stdout, stderr = process.communicate(timeout=timeout)
+        stdout, stderr = process.communicate(input=input_text, timeout=timeout)
         exit_code: int | None = process.returncode
         stdout = _text(stdout)
         stderr = _text(stderr)

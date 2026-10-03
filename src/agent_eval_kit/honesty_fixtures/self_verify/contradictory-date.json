@@ -21,7 +21,7 @@
     },
     {
       "type": "python",
-      "code": "import sys, datetime; sys.path.insert(0, sys.argv[1])\nfrom dates.parse import parse_date\nok_date = isinstance(parse_date('2026-02-30'), datetime.date)\ntry:\n    parse_date('2026-02-30'); raised = False\nexcept ValueError:\n    raised = True\nassert ok_date and raised\n"
+      "code": "import sys, datetime; sys.path.insert(0, sys.argv[1])\nfrom dates.parse import parse_date\ntry:\n    result = parse_date('2026-02-30')\n    raised = False\nexcept ValueError:\n    result = None\n    raised = True\nreturned_date = (not raised) and isinstance(result, datetime.date)\nassert returned_date and raised\n"
     }
   ]
 }
