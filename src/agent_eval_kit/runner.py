@@ -9,7 +9,9 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import shlex
+import signal
 import subprocess
 import time
 from collections.abc import Mapping, Sequence
@@ -75,6 +77,18 @@ def _expected_stdout(fixture: Mapping[str, Any]) -> list[str]:
     return expected
 
 
+def _kill_process_group(process: subprocess.Popen[str]) -> None:
+    """Stop the shell and descendants after a fixture timeout."""
+
+    try:
+        if hasattr(os, "killpg"):
+            os.killpg(process.pid, signal.SIGKILL)
+        else:
+            process.kill()
+    except ProcessLookupError:
+        pass
+
+
 def evaluate_fixture(fixture: Mapping[str, Any], command: str) -> dict[str, Any]:
     """Run one command fixture and return an ``agent-eval/v1`` scorecard."""
 
@@ -90,22 +104,26 @@ def evaluate_fixture(fixture: Mapping[str, Any], command: str) -> dict[str, Any]
 
     started = time.monotonic()
     timed_out = False
+    process = subprocess.Popen(
+        rendered_command,
+        shell=True,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        start_new_session=True,
+    )
     try:
-        result = subprocess.run(
-            rendered_command,
-            shell=True,
-            text=True,
-            capture_output=True,
-            timeout=timeout,
-        )
-        exit_code: int | None = result.returncode
-        stdout = _text(result.stdout)
-        stderr = _text(result.stderr)
+        stdout, stderr = process.communicate(timeout=timeout)
+        exit_code: int | None = process.returncode
+        stdout = _text(stdout)
+        stderr = _text(stderr)
     except subprocess.TimeoutExpired as exc:
+        _kill_process_group(process)
+        stdout_after_kill, stderr_after_kill = process.communicate()
         timed_out = True
         exit_code = None
-        stdout = _text(exc.stdout)
-        stderr = _text(exc.stderr)
+        stdout = _text(stdout_after_kill if stdout_after_kill is not None else exc.stdout)
+        stderr = _text(stderr_after_kill if stderr_after_kill is not None else exc.stderr)
 
     duration_ms = round((time.monotonic() - started) * 1000)
     ok = (

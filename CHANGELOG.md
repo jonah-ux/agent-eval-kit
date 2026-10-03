@@ -8,6 +8,8 @@
 - add `agent-eval/matrix/v1` plans for repeated candidate and fixture comparisons
 - emit canonical plan fingerprints, per-trial scorecards, behavior fingerprints, pass rates, latency summaries, and stable tie-break rankings
 - report command timeouts as failed scorecards instead of raising an unstructured exception
+- terminate the full evaluator process group on timeout while preserving the `agent-eval/v1` scorecard
+- return stable `agent-eval/error/v1` envelopes for unreadable or malformed input files and plans
 
 ## 0.1.0 - 2026-09-30
 

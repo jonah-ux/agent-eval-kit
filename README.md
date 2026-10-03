@@ -39,6 +39,10 @@ JSON
 agent-eval run fixture.json --command 'printf {task}'
 ```
 
+Unreadable or malformed fixtures, receipts, and matrix plans return a stable
+`agent-eval/error/v1` JSON envelope and exit `2`, so a caller can distinguish an
+input refusal from a failed candidate scorecard.
+
 ## See it work
 
 The bundled demo produces a scorecard that a CI job or another agent can consume directly:
@@ -125,7 +129,12 @@ python -m build --sdist --wheel
 
 The matrix plan is deliberately provider-neutral. Commands run with the host
 shell and are not sandboxed or network-isolated; use a disposable environment
-when evaluating untrusted agents.
+when evaluating untrusted agents. A timeout terminates the evaluator's process
+group, but this tool does not claim to sandbox or secure the evaluated command.
+The `agent-eval/v1` scorecard keeps captured stdout and stderr intact; this
+slice does not add output truncation because that would change the existing
+scorecard contract. Bound the producer or command in the surrounding disposable
+environment when output volume is untrusted.
 
 Read [CONTRIBUTING.md](CONTRIBUTING.md) before adding fixtures. This tool evaluates a command;
 it does not claim to sandbox or secure that command.
