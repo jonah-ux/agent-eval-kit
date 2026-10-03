@@ -89,24 +89,71 @@ def _kill_process_group(process: subprocess.Popen[str]) -> None:
         pass
 
 
-def _reap_process_group(pgid: int, *, grace_seconds: float = 2.0) -> None:
-    """SIGKILL every process left in ``pgid`` and wait until the group is empty.
+def _session_members(sid: int) -> list[int] | None:
+    """Return live pids whose session id is ``sid``, or ``None`` if they cannot be listed.
 
-    The command runs with ``start_new_session=True``, so ``pgid`` is its own
-    session's group and never the evaluator's.  The guard below refuses to
-    signal the caller's group regardless.
+    Linux reads ``/proc``; other POSIX systems (macOS) list pids with
+    ``ps -A -o pid=``.  Session membership is always checked with
+    ``os.getsid`` rather than trusting ``ps`` columns, which differ by platform.
     """
 
-    if not hasattr(os, "killpg") or pgid <= 1 or pgid == os.getpgrp():
+    if os.path.isdir("/proc/self"):
+        candidates = [int(name) for name in os.listdir("/proc") if name.isdigit()]
+    else:
+        try:
+            listing = subprocess.run(
+                ["ps", "-A", "-o", "pid="],
+                capture_output=True,
+                text=True,
+                timeout=10,
+                check=False,
+            ).stdout
+        except (OSError, subprocess.SubprocessError):
+            return None
+        candidates = [int(item) for item in listing.split() if item.isdigit()]
+    own = os.getpid()
+    members = []
+    for pid in candidates:
+        if pid <= 1 or pid == own:
+            continue
+        try:
+            if os.getsid(pid) == sid:
+                members.append(pid)
+        except OSError:
+            continue
+    return members
+
+
+def _reap_session(sid: int, *, grace_seconds: float = 2.0) -> None:
+    """SIGKILL every process left in session ``sid`` and wait until none remain.
+
+    The command runs with ``start_new_session=True``, so its pid is the id of
+    a session (and process group) of its own.  Killing by session also catches
+    children that moved to a new process group with ``setpgid``.  A child that
+    calls ``setsid`` starts another session and is not covered.  Guards: never
+    the evaluator's own session, never ``sid <= 1``, and every pid's session
+    is re-checked right before it is signalled.
+    """
+
+    if not hasattr(os, "getsid") or not hasattr(os, "killpg"):
+        return
+    if sid <= 1 or sid == os.getsid(0):
         return
     deadline = time.monotonic() + grace_seconds
     while True:
         try:
-            os.killpg(pgid, signal.SIGKILL)
-        except ProcessLookupError:
+            os.killpg(sid, signal.SIGKILL)
+        except (ProcessLookupError, PermissionError):
+            pass
+        members = _session_members(sid)
+        if not members:
             return
-        except PermissionError:
-            return
+        for pid in members:
+            try:
+                if os.getsid(pid) == sid:
+                    os.kill(pid, signal.SIGKILL)
+            except OSError:
+                pass
         if time.monotonic() >= deadline:
             return
         time.sleep(0.01)
@@ -120,7 +167,7 @@ def _execute(
     env: Mapping[str, str] | None = None,
     stdin: Any = None,
     input_text: str | None = None,
-    kill_group_on_exit: bool = False,
+    kill_session_on_exit: bool = False,
 ) -> dict[str, Any]:
     """Run one shell command and capture its observable behavior.
 
@@ -128,9 +175,10 @@ def _execute(
     ``timed_out`` and ``duration_ms``.  A timeout kills the whole process
     group and is reported, not raised.  ``input_text``, when given, is written
     to the command's stdin (and overrides ``stdin``).  With
-    ``kill_group_on_exit=True`` every process still in the command's process
-    group is killed after a normal exit too, so a background child cannot keep
-    acting after the command returns.  The default keeps the original
+    ``kill_session_on_exit=True`` every process still in the command's
+    session (its own, from ``start_new_session``) is killed after the command
+    exits, normally or by timeout, so a background child cannot keep acting
+    after the command returns.  The default keeps the original
     behavior for ``evaluate_fixture``.
     """
 
@@ -147,13 +195,17 @@ def _execute(
         cwd=cwd,
         env=None if env is None else dict(env),
     )
+    # start_new_session makes the child call setsid(), so its pid is its
+    # session id.  Record it now: the session id stays reserved while any
+    # member of the session is alive.
+    session_id = process.pid
     try:
         stdout, stderr = process.communicate(input=input_text, timeout=timeout)
         exit_code: int | None = process.returncode
         stdout = _text(stdout)
         stderr = _text(stderr)
-        if kill_group_on_exit:
-            _reap_process_group(process.pid)
+        if kill_session_on_exit:
+            _reap_session(session_id)
     except subprocess.TimeoutExpired as exc:
         _kill_process_group(process)
         stdout_after_kill, stderr_after_kill = process.communicate()
@@ -161,8 +213,8 @@ def _execute(
         exit_code = None
         stdout = _text(stdout_after_kill if stdout_after_kill is not None else exc.stdout)
         stderr = _text(stderr_after_kill if stderr_after_kill is not None else exc.stderr)
-        if kill_group_on_exit:
-            _reap_process_group(process.pid)
+        if kill_session_on_exit:
+            _reap_session(session_id)
 
     return {
         "exit_code": exit_code,
