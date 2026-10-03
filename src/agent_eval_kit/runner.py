@@ -89,6 +89,111 @@ def _kill_process_group(process: subprocess.Popen[str]) -> None:
         pass
 
 
+def _reap_process_group(pgid: int, *, grace_seconds: float = 2.0) -> None:
+    """SIGKILL every process left in ``pgid`` and wait until the group is empty.
+
+    The command runs with ``start_new_session=True``, so ``pgid`` is its own
+    session's group and never the evaluator's.  The guard below refuses to
+    signal the caller's group regardless.
+    """
+
+    if not hasattr(os, "killpg") or pgid <= 1 or pgid == os.getpgrp():
+        return
+    deadline = time.monotonic() + grace_seconds
+    while True:
+        try:
+            os.killpg(pgid, signal.SIGKILL)
+        except ProcessLookupError:
+            return
+        except PermissionError:
+            return
+        if time.monotonic() >= deadline:
+            return
+        time.sleep(0.01)
+
+
+def _execute(
+    rendered_command: str,
+    timeout: float,
+    *,
+    cwd: str | os.PathLike[str] | None = None,
+    env: Mapping[str, str] | None = None,
+    stdin: Any = None,
+    input_text: str | None = None,
+    kill_group_on_exit: bool = False,
+) -> dict[str, Any]:
+    """Run one shell command and capture its observable behavior.
+
+    Returns ``exit_code`` (``None`` on timeout), ``stdout``, ``stderr``,
+    ``timed_out`` and ``duration_ms``.  A timeout kills the whole process
+    group and is reported, not raised.  ``input_text``, when given, is written
+    to the command's stdin (and overrides ``stdin``).  With
+    ``kill_group_on_exit=True`` every process still in the command's process
+    group is killed after a normal exit too, so a background child cannot keep
+    acting after the command returns.  The default keeps the original
+    behavior for ``evaluate_fixture``.
+    """
+
+    started = time.monotonic()
+    timed_out = False
+    process = subprocess.Popen(
+        rendered_command,
+        shell=True,
+        text=True,
+        stdin=subprocess.PIPE if input_text is not None else stdin,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        start_new_session=True,
+        cwd=cwd,
+        env=None if env is None else dict(env),
+    )
+    try:
+        stdout, stderr = process.communicate(input=input_text, timeout=timeout)
+        exit_code: int | None = process.returncode
+        stdout = _text(stdout)
+        stderr = _text(stderr)
+        if kill_group_on_exit:
+            _reap_process_group(process.pid)
+    except subprocess.TimeoutExpired as exc:
+        _kill_process_group(process)
+        stdout_after_kill, stderr_after_kill = process.communicate()
+        timed_out = True
+        exit_code = None
+        stdout = _text(stdout_after_kill if stdout_after_kill is not None else exc.stdout)
+        stderr = _text(stderr_after_kill if stderr_after_kill is not None else exc.stderr)
+        if kill_group_on_exit:
+            _reap_process_group(process.pid)
+
+    return {
+        "exit_code": exit_code,
+        "stdout": stdout,
+        "stderr": stderr,
+        "timed_out": timed_out,
+        "duration_ms": round((time.monotonic() - started) * 1000),
+    }
+
+
+def _wilson(k: int, n: int, z: float = 1.96) -> list[float] | None:
+    """Return the Wilson score interval ``[lo, hi]`` for ``k`` of ``n``.
+
+    ``n == 0`` has no defined rate, so it returns ``None`` rather than a
+    misleading ``[0, 0]``.  Bounds are rounded to four decimals.
+    """
+
+    if isinstance(k, bool) or isinstance(n, bool) or not isinstance(k, int) or not isinstance(n, int):
+        raise ValueError("wilson k and n must be integers")
+    if n < 0 or k < 0 or k > n:
+        raise ValueError("wilson requires 0 <= k <= n")
+    if n == 0:
+        return None
+    p_hat = k / n
+    z2 = z * z
+    denominator = 1 + z2 / n
+    center = (p_hat + z2 / (2 * n)) / denominator
+    half = z * ((p_hat * (1 - p_hat) / n + z2 / (4 * n * n)) ** 0.5) / denominator
+    return [round(max(0.0, center - half), 4), round(min(1.0, center + half), 4)]
+
+
 def evaluate_fixture(fixture: Mapping[str, Any], command: str) -> dict[str, Any]:
     """Run one command fixture and return an ``agent-eval/v1`` scorecard."""
 
@@ -102,44 +207,21 @@ def evaluate_fixture(fixture: Mapping[str, Any], command: str) -> dict[str, Any]
     timeout = _timeout(fixture)
     rendered_command = command.replace("{task}", shlex.quote(task))
 
-    started = time.monotonic()
-    timed_out = False
-    process = subprocess.Popen(
-        rendered_command,
-        shell=True,
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        start_new_session=True,
-    )
-    try:
-        stdout, stderr = process.communicate(timeout=timeout)
-        exit_code: int | None = process.returncode
-        stdout = _text(stdout)
-        stderr = _text(stderr)
-    except subprocess.TimeoutExpired as exc:
-        _kill_process_group(process)
-        stdout_after_kill, stderr_after_kill = process.communicate()
-        timed_out = True
-        exit_code = None
-        stdout = _text(stdout_after_kill if stdout_after_kill is not None else exc.stdout)
-        stderr = _text(stderr_after_kill if stderr_after_kill is not None else exc.stderr)
-
-    duration_ms = round((time.monotonic() - started) * 1000)
+    execution = _execute(rendered_command, timeout)
     ok = (
-        not timed_out
-        and exit_code == expected
-        and all(fragment in stdout for fragment in expected_stdout)
+        not execution["timed_out"]
+        and execution["exit_code"] == expected
+        and all(fragment in execution["stdout"] for fragment in expected_stdout)
     )
     return {
         "schema": "agent-eval/v1",
         "ok": ok,
-        "exit_code": exit_code,
+        "exit_code": execution["exit_code"],
         "expected_exit": expected,
-        "duration_ms": duration_ms,
-        "stdout": stdout,
-        "stderr": stderr,
-        "timed_out": timed_out,
+        "duration_ms": execution["duration_ms"],
+        "stdout": execution["stdout"],
+        "stderr": execution["stderr"],
+        "timed_out": execution["timed_out"],
     }
 
 
