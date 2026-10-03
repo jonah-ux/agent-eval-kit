@@ -37,6 +37,10 @@ The bundled demo produces a scorecard that a CI job or another agent can consume
 {"schema":"agent-eval/v1","ok":true,"exit_code":0,"expected_exit":0,"stdout":"hello","stderr":"","duration_ms":21,"timed_out":false}
 ```
 
+Open the [candidate trial scorecard walkthrough](docs/walkthrough.html) for a visual tour of
+fixtures, repeated trials, stability, and ranking. The browser board is an illustrative snapshot;
+the commands below are the real CLI path and are never invoked by the page.
+
 ## Compare candidates with repeated trials
 
 Use a matrix when one fixture is too small to compare two agent commands. A
