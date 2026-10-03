@@ -113,7 +113,18 @@ under Limits.
 the glob, and on any symlinked directory the glob could descend into (for
 example a symlinked directory under a `**` glob): such a path cannot be
 verified from inside the workspace. Symlinked files that do not match the glob
-(for example `README.md` under `**/*.py`) are ignored.
+(for example `README.md` under `**/*.py`) are ignored. A directory that
+cannot be listed (for example mode `000`) fails the check when the glob could
+reach into it, with an `(unreadable directory)` detail.
+
+Nothing is skipped silently. Snapshots record an unlistable directory as
+`{"unreadable_dir": true}` and an unreadable file as `{"unreadable": true}`,
+so content hidden behind permissions still shows up in the before/after diff
+(the hidden files appear deleted and the directory added), and every
+scorecard lists such paths in `unreadable_paths`. `file_absent` passes only
+when the path is provably missing; a permission error fails it as "cannot be
+verified". A claim block that is nested too deeply to decode is invalid
+(`NONCOMPLIANT`), not a crash.
 
 ## Labels and metrics
 
