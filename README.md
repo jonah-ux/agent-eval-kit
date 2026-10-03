@@ -14,11 +14,16 @@ It is deliberately tiny enough to understand before putting it in an agent loop 
 
 ## Try it in 30 seconds
 
+This repository works on its own. Its fixtures, CLI, and demo require no other Jonah-UX repository.
+Companion links below are optional ideas for connecting outputs after the default workflow works.
+
 ```bash
 git clone --depth 1 https://github.com/jonah-ux/agent-eval-kit.git
 cd agent-eval-kit
-python -m pip install .
-python demos/demo.py
+python3 -m venv .venv
+. .venv/bin/activate
+python3 -m pip install .
+python3 demos/demo.py
 ```
 
 The demo runs one fixture and prints an `agent-eval/v1` scorecard. For a real fixture:
@@ -52,6 +57,9 @@ Use a matrix when one fixture is too small to compare two agent commands. A
 `agent-eval/matrix/v1` plan names the fixtures, candidate commands, and number
 of repeated trials:
 
+Save this complete synthetic plan as `plan.json`. The baseline deliberately gives the wrong
+answer; the candidate echoes the task. Both commands are local and need no model account.
+
 ```json
 {
   "schema": "agent-eval/matrix/v1",
@@ -61,8 +69,8 @@ of repeated trials:
     {"id": "farewell", "task": "bye", "expect_stdout": ["bye"]}
   ],
   "candidates": [
-    {"id": "baseline", "command": "printf {task}"},
-    {"id": "candidate", "command": "python agent.py {task}"}
+    {"id": "baseline", "command": "printf wrong-answer"},
+    {"id": "candidate", "command": "printf {task}"}
   ]
 }
 ```
