@@ -16,7 +16,7 @@
     h2 { margin: 0 0 10px; font-size: clamp(1.4rem, 3vw, 2.2rem); letter-spacing: -.03em; }
     h3 { margin: 0 0 5px; font-size: 1rem; }
     p { color: var(--muted); max-width: 70ch; }
-    .hero { display: grid; grid-template-columns: 1.15fr .85fr; gap: 28px; align-items: end; }
+    .hero { display: grid; grid-template-columns: 1fr; align-items: end; }
     .lede { font-size: 1.1rem; }
     .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 24px; }
     .chip { border: 1px solid var(--line); border-radius: 999px; padding: 6px 10px; color: var(--muted); font: .78rem ui-monospace, SFMono-Regular, Menlo, monospace; }
@@ -90,19 +90,13 @@
       <div>
         <div class="eyebrow">Agent Eval Kit · visual field guide</div>
         <h1 id="title">Make the candidate show its work.</h1>
-        <p class="lede">A tiny fixture becomes a repeatable trial, then a scorecard you can actually argue with. No vibes-based leaderboard goblins.</p>
-        <div class="chips"><span class="chip accent">agent-eval/matrix/v1</span><span class="chip">illustrative browser snapshot</span><span class="chip">no CLI calls here</span></div>
+        <p class="lede">Repeat a small task and compare pass rate, duration, and output stability.</p>
+        <div class="chips"><span class="chip accent">agent-eval/matrix/v1</span><span class="chip">illustrative browser snapshot</span></div>
       </div>
-      <svg viewBox="0 0 520 300" role="img" aria-labelledby="flow-title flow-desc">
-        <title id="flow-title">Evaluation flow</title><desc id="flow-desc">A plan moves through repeated trials to receipts and a ranked result.</desc>
-        <rect width="520" height="300" rx="24" fill="#0b0f20" stroke="#353c63"/>
-        <path d="M126 134h66m140 0h66m-140 0h66" stroke="#c4b5fd" stroke-width="4" stroke-linecap="round"/><path d="m180 123 14 11-14 11m138-22 14 11-14 11" fill="none" stroke="#c4b5fd" stroke-width="4"/>
-        <g font-family="ui-monospace,monospace" text-anchor="middle"><rect x="28" y="100" width="98" height="68" rx="14" fill="#202747"/><text x="77" y="130" fill="#f8f7ff" font-size="14">PLAN</text><text x="77" y="151" fill="#b7b3ca" font-size="11">fixtures</text><rect x="192" y="100" width="98" height="68" rx="14" fill="#29244b"/><text x="241" y="130" fill="#f8f7ff" font-size="14">TRIALS</text><text x="241" y="151" fill="#b7b3ca" font-size="11">repeat × N</text><rect x="356" y="100" width="136" height="68" rx="14" fill="#173b38"/><text x="424" y="130" fill="#7ef2c2" font-size="14">RANK</text><text x="424" y="151" fill="#b7b3ca" font-size="11">pass + time</text><text x="260" y="230" fill="#b7b3ca" font-size="12">same task grid · visible timing · stable behavior</text></g>
-      </svg>
     </section>
     <section class="cohort-deck" data-cohort-deck="agent-eval-kit" style="--deck-accent: var(--accent); --deck-good: var(--good);" aria-labelledby="agentevalkit-deck-title">
       <div class="cohort-deck-head">
-        <div><div class="cohort-deck-kicker">launch deck / synthetic state explorer</div><h2 id="agentevalkit-deck-title">Spin up a fair trial.</h2><p class="cohort-deck-intro">A candidate is only as convincing as its repeatable receipt. Step through the same fictional plan, trials, and ranking that the real CLI emits as machine-readable evidence.</p></div>
+        <div><div class="cohort-deck-kicker">PLAN / TRIALS / RANK</div><h2 id="agentevalkit-deck-title">Spin up a fair trial.</h2><p class="cohort-deck-intro">Select a step to see what the matrix plan records.</p></div>
         <div class="cohort-deck-badge"><span>local core</span><span id="agentevalkit-deck-badge">PLAN / TRIAL / RANK</span></div>
       </div>
       <div class="cohort-deck-body">
@@ -115,17 +109,17 @@
           </svg>
         </div>
         <div class="cohort-deck-copy" role="tabpanel" aria-live="polite">
-          <div><div class="cohort-deck-kicker" id="agentevalkit-deck-kicker">beat 01 / plan</div><h3 id="agentevalkit-deck-heading">Fingerprint the fixture</h3><p id="agentevalkit-deck-copy">A stable task grid defines the expectations before the candidate gets to perform.</p><div class="cohort-deck-readout" id="agentevalkit-deck-readout">plan fingerprint 9b2d…</div></div>
+          <div><div class="cohort-deck-kicker" id="agentevalkit-deck-kicker">beat 01 / plan</div><h3 id="agentevalkit-deck-heading">Fingerprint the fixture</h3><p id="agentevalkit-deck-copy">A stable task grid defines the expectations before the candidate gets to perform.</p><div class="cohort-deck-readout" id="agentevalkit-deck-readout">plan ready · synthetic</div></div>
           <button class="cohort-deck-next" type="button" data-deck-next>next beat →</button>
         </div>
       </div>
       <div class="cohort-deck-tabs" role="tablist" aria-label="Synthetic guide beats"><button class="cohort-deck-tab" type="button" role="tab" aria-selected="true" data-deck-step="0">01 · PLAN</button><button class="cohort-deck-tab" type="button" role="tab" aria-selected="false" data-deck-step="1">02 · TRIAL</button><button class="cohort-deck-tab" type="button" role="tab" aria-selected="false" data-deck-step="2">03 · RANK</button></div>
-      <div class="cohort-deck-foot"><span>Illustrative browser scorecard: it does not execute a candidate or certify a model. Generate the real receipt below.</span><span>illustrative browser state · no sibling install</span></div>
+      <div class="cohort-deck-foot"><span>Synthetic scorecard only · use the local CLI demo below for real output.</span></div>
     </section>
 
 
     <section class="panel" aria-labelledby="score-title">
-      <div class="panel-head"><div><div class="eyebrow">01 / candidate trial board</div><h2 id="score-title">The result is a receipt, not a mood.</h2></div><div class="stamp">● PLAN FINGERPRINT 9b2d…</div></div>
+      <div class="panel-head"><div><div class="eyebrow">01 / candidate trial board</div><h2 id="score-title">Inspect the candidate scorecard.</h2></div><div class="stamp">● PLAN FINGERPRINT 9b2d…</div></div>
       <div class="score-grid">
         <article class="score"><h3>Pass rate</h3><small>candidate / 6 trials</small><strong>100%</strong><small>All expectations met</small></article>
         <article class="score"><h3>Mean duration</h3><small>candidate / illustrative</small><strong>18 ms</strong><small>Timing stays visible</small></article>
@@ -133,34 +127,20 @@
       </div>
       <div class="control-row"><label for="scenario">Synthetic trial scenario<select id="scenario"><option value="stable">stable candidate</option><option value="flaky">flaky candidate</option><option value="timeout">timeout-heavy candidate</option></select></label><button class="run" id="run-scenario" type="button">recompute scorecard</button><span id="scenario-status" class="stamp" role="status" aria-live="polite">Illustrative stable run loaded.</span></div>
       <div style="margin-top:22px"><div class="rank"><span class="rank-num">01</span><strong>candidate</strong><div class="bar" aria-label="candidate 100 percent pass rate"><i style="width:100%"></i></div><span>100%</span></div><div class="rank"><span class="rank-num">02</span><strong>baseline</strong><div class="bar" aria-label="baseline 83 percent pass rate"><i style="width:83%"></i></div><span>83%</span></div></div>
-      <details><summary>What does this page prove?</summary><p>Only that the visual language explains the scorecard. These numbers are illustrative browser data; the page does not run a command, evaluate a model, or certify a candidate. Generate the real receipt with the command below.</p></details>
+      <details><summary>What does this page prove?</summary><p>This panel only demonstrates the scorecard controls. It does not run the CLI or evaluate a model; use the quickstart below for real output.</p></details>
     </section>
 
     <section class="panel" aria-labelledby="command-title">
-      <div class="eyebrow">02 / real CLI path</div><h2 id="command-title">Run the same plan for real.</h2>
-      <p>One copyable sequence installs the published v0.3.0 prerelease, creates the same two-fixture synthetic plan shown in the README, and runs it locally. It needs Python 3.11+ and no model account.</p>
+      <div class="eyebrow">02 / run locally</div><h2 id="command-title">Run the included demo.</h2>
+      <p>The published v0.3.0 prerelease includes a one-fixture demo. It needs Python 3.11+ and no model account. For matrix-plan comparisons, see the README.</p>
       <div class="command"><code id="eval-quickstart">git clone --branch v0.3.0 --depth 1 https://github.com/jonah-ux/agent-eval-kit.git
 cd agent-eval-kit
 python3 -m venv .venv
 . .venv/bin/activate
 python3 -m pip install .
-cat &gt; plan.json &lt;&lt;'JSON'
-{
-  "schema": "agent-eval/matrix/v1",
-  "trials": 3,
-  "fixtures": [
-    {"id": "greeting", "task": "hello", "expect_stdout": ["hello"]},
-    {"id": "farewell", "task": "bye", "expect_stdout": ["bye"]}
-  ],
-  "candidates": [
-    {"id": "baseline", "command": "printf wrong-answer"},
-    {"id": "candidate", "command": "printf {task}"}
-  ]
-}
-JSON
-agent-eval matrix plan.json</code><button class="copy" type="button" data-copy="eval-quickstart">copy complete quickstart</button></div>
+python3 demos/demo.py</code><button class="copy" type="button" data-copy="eval-quickstart">copy quickstart</button></div>
       <p id="copy-status" role="status" aria-live="polite"></p>
-      <div class="foot"><span>Source of truth: the emitted <code>agent-eval/matrix/v1</code> document.</span><a href="https://github.com/jonah-ux/agent-eval-kit#readme">Back to README</a></div>
+      <div class="foot"><span>The demo emits <code>agent-eval/v1</code>; matrix plan examples are in the README.</span><a href="https://github.com/jonah-ux/agent-eval-kit#readme">Back to README</a></div>
     </section>
   </main>
   <script>
@@ -181,7 +161,7 @@ agent-eval matrix plan.json</code><button class="copy" type="button" data-copy="
 (() => {
   const deck = document.querySelector('[data-cohort-deck="agent-eval-kit"]');
   if (!deck) return;
-  const steps = [{"label": "PLAN", "heading": "Fingerprint the fixture", "copy": "A stable task grid defines the expectations before the candidate gets to perform.", "readout": "plan fingerprint 9b2d…"}, {"label": "TRIAL", "heading": "Repeat the candidate", "copy": "The illustrative board makes flaky and timeout-heavy behavior visible beside the happy path.", "readout": "6 trials · timing visible"}, {"label": "RANK", "heading": "Keep the receipt", "copy": "Pass rate, duration, and behavioral stability stay together for an inspectable decision.", "readout": "scorecard ready · synthetic"}];
+  const steps = [{"label": "PLAN", "heading": "Fingerprint the fixture", "copy": "A stable task grid defines the expectations before the candidate gets to perform.", "readout": "plan ready · synthetic"}, {"label": "TRIAL", "heading": "Repeat the candidate", "copy": "The illustrative board makes flaky and timeout-heavy behavior visible beside the happy path.", "readout": "6 trials · timing visible"}, {"label": "RANK", "heading": "Keep the receipt", "copy": "Pass rate, duration, and behavioral stability stay together for an inspectable decision.", "readout": "scorecard ready · synthetic"}];
   const tabs = Array.from(deck.querySelectorAll('[data-deck-step]'));
   const nodes = Array.from(deck.querySelectorAll('.cohort-deck-node'));
   const kicker = deck.querySelector('#agentevalkit-deck-kicker');
