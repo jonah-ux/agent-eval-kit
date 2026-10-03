@@ -39,7 +39,7 @@
     .rank-num { color: var(--accent); font: 700 1.4rem ui-monospace, SFMono-Regular, Menlo, monospace; }
     .bar { flex: 1; height: 9px; border-radius: 99px; background: #282e4c; overflow: hidden; }
     .bar i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--accent), #8b7cf6); }
-    .command { position: relative; margin-top: 16px; padding: 16px 72px 16px 18px; border: 1px solid var(--line); border-radius: 14px; background: #090c18; color: #e9e4ff; font: .86rem/1.6 ui-monospace, SFMono-Regular, Menlo, monospace; overflow-wrap: anywhere; }
+    .command { position: relative; margin-top: 16px; padding: 52px 18px 16px; border: 1px solid var(--line); border-radius: 14px; background: #090c18; color: #e9e4ff; font: .78rem/1.65 ui-monospace, SFMono-Regular, Menlo, monospace; overflow-wrap: anywhere; white-space: pre-wrap; }
     button.copy { position: absolute; top: 10px; right: 10px; border: 1px solid #c4b5fd66; border-radius: 8px; padding: 7px 9px; background: #201c3c; color: var(--accent); cursor: pointer; font: .75rem ui-monospace, SFMono-Regular, Menlo, monospace; }
     button.copy:hover, button.copy:focus-visible { border-color: var(--accent); outline: 2px solid #c4b5fd55; outline-offset: 2px; }
     details { margin-top: 18px; color: var(--muted); }
@@ -138,8 +138,27 @@
 
     <section class="panel" aria-labelledby="command-title">
       <div class="eyebrow">02 / real CLI path</div><h2 id="command-title">Run the same plan for real.</h2>
-      <p>Install Agent Eval Kit, save a matrix plan, and inspect the JSON output in CI or an agent loop.</p>
-      <div class="command"><code>agent-eval matrix plan.json</code><button class="copy" type="button" data-copy="agent-eval matrix plan.json">copy</button></div>
+      <p>One copyable sequence installs the published v0.3.0 prerelease, creates the same two-fixture synthetic plan shown in the README, and runs it locally. It needs Python 3.11+ and no model account.</p>
+      <div class="command"><code id="eval-quickstart">git clone --branch v0.3.0 --depth 1 https://github.com/jonah-ux/agent-eval-kit.git
+cd agent-eval-kit
+python3 -m venv .venv
+. .venv/bin/activate
+python3 -m pip install .
+cat &gt; plan.json &lt;&lt;'JSON'
+{
+  "schema": "agent-eval/matrix/v1",
+  "trials": 3,
+  "fixtures": [
+    {"id": "greeting", "task": "hello", "expect_stdout": ["hello"]},
+    {"id": "farewell", "task": "bye", "expect_stdout": ["bye"]}
+  ],
+  "candidates": [
+    {"id": "baseline", "command": "printf wrong-answer"},
+    {"id": "candidate", "command": "printf {task}"}
+  ]
+}
+JSON
+agent-eval matrix plan.json</code><button class="copy" type="button" data-copy="eval-quickstart">copy complete quickstart</button></div>
       <p id="copy-status" role="status" aria-live="polite"></p>
       <div class="foot"><span>Source of truth: the emitted <code>agent-eval/matrix/v1</code> document.</span><a href="https://github.com/jonah-ux/agent-eval-kit#readme">Back to README</a></div>
     </section>
@@ -153,7 +172,7 @@
     });
     document.querySelectorAll('[data-copy]').forEach((button) => button.addEventListener('click', async () => {
       const status = document.getElementById('copy-status');
-      try { await navigator.clipboard.writeText(button.dataset.copy); button.textContent = 'copied'; status.textContent = 'Command copied. Your terminal remains the boss.'; }
+      try { await navigator.clipboard.writeText(document.getElementById(button.dataset.copy)?.textContent || button.dataset.copy); button.textContent = 'copied'; status.textContent = 'Complete pinned install and trial copied. Your terminal remains the boss.'; }
       catch { status.textContent = 'Copy was unavailable; select the command manually.'; }
     }));
   </script>
