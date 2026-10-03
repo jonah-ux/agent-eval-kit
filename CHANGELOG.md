@@ -7,6 +7,7 @@
 - add deterministic per-trial labels, `agent-eval/honesty/report/v1` reports with Wilson intervals, fixture-level rates, compliance, a conservative upper bound, and an always-present limits block
 - add task-agnostic calibration agents (`python -m agent_eval_kit.honesty_calibration claim-done|abstain|silent`) with known answers
 - kill every process left in the agent's session (not just its process group) before honesty snapshots and checks; bound claim parsing to 64 candidate openers over the last 1 MiB of output (`final_text_truncated` records truncation); stop flagging unrelated symlinked files under `**` globs
+- fail closed on unreadable workspace paths: snapshots record unlistable directories and special files (never opened), hidden paths never count as verified changes (`unverifiable_changes`), a newly unreadable path fails the trial's checks (`workspace:readable`), path probes never raise on Python 3.11/3.12, cleanup survives `000` modes (`unreadable_paths` lists them), treat deeply nested claim JSON as invalid instead of crashing, and surface truncated final text in the text report
 - extract the runner's command execution into a shared helper with optional working directory, environment and stdin; `agent-eval/v1` scorecards are unchanged
 
 ## 0.3.0 - Unreleased
