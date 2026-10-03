@@ -4,7 +4,6 @@
 
 **Run tiny reproducible agent tasks and turn their results into a scorecard.**
 
-[![CI](https://github.com/jonah-ux/agent-eval-kit/actions/workflows/ci.yml/badge.svg)](https://github.com/jonah-ux/agent-eval-kit/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.11%2B-3776ab)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-MIT-22c55e)](LICENSE)
 
