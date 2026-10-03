@@ -15,7 +15,9 @@ It is deliberately tiny enough to understand before putting it in an agent loop 
 ## Try it in 30 seconds
 
 ```bash
-python -m pip install git+https://github.com/jonah-ux/agent-eval-kit.git@main
+git clone --depth 1 https://github.com/jonah-ux/agent-eval-kit.git
+cd agent-eval-kit
+python -m pip install .
 python demos/demo.py
 ```
 
@@ -26,6 +28,9 @@ The demo runs one fixture and prints an `agent-eval/v1` scorecard. For a real fi
 ```
 
 ```bash
+cat > fixture.json <<'JSON'
+{"task":"hello","expect_stdout":["hello"],"timeout":10}
+JSON
 agent-eval run fixture.json --command 'printf {task}'
 ```
 
@@ -108,7 +113,6 @@ Use [Agent Policy](https://github.com/jonah-ux/agent-policy) to decide whether a
 ```bash
 python -m unittest discover -s tests
 python -m build --sdist --wheel
-python demos/demo.py
 ```
 
 The matrix plan is deliberately provider-neutral. Commands run with the host

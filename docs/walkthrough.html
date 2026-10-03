@@ -29,6 +29,11 @@
     .score { min-height: 160px; padding: 18px; border: 1px solid var(--line); border-radius: 18px; background: #0d1124aa; }
     .score strong { display: block; margin-top: 18px; font-size: 2.4rem; letter-spacing: -.06em; }
     .score small { color: var(--muted); }
+    .control-row { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; margin: 18px 0 2px; }
+    label { display: grid; gap: 5px; color: var(--muted); font-size: .82rem; }
+    select, button.run { border: 1px solid var(--line); border-radius: 9px; padding: 9px 11px; background: #0d1124; color: var(--ink); font: .84rem ui-monospace, SFMono-Regular, Menlo, monospace; }
+    button.run { border-color: #7ef2c266; color: var(--good); cursor: pointer; }
+    button.run:hover, button.run:focus-visible, select:focus-visible { border-color: var(--good); outline: 2px solid #7ef2c255; outline-offset: 2px; }
     .rank { display: flex; align-items: center; gap: 14px; padding: 14px 0; border-top: 1px solid var(--line); }
     .rank:first-child { border-top: 0; }
     .rank-num { color: var(--accent); font: 700 1.4rem ui-monospace, SFMono-Regular, Menlo, monospace; }
@@ -68,6 +73,7 @@
         <article class="score"><h3>Mean duration</h3><small>candidate / illustrative</small><strong>18 ms</strong><small>Timing stays visible</small></article>
         <article class="score"><h3>Behavior stable</h3><small>non-timing fingerprint</small><strong>YES</strong><small>Same output shape each run</small></article>
       </div>
+      <div class="control-row"><label for="scenario">Synthetic trial scenario<select id="scenario"><option value="stable">stable candidate</option><option value="flaky">flaky candidate</option><option value="timeout">timeout-heavy candidate</option></select></label><button class="run" id="run-scenario" type="button">recompute scorecard</button><span id="scenario-status" class="stamp" role="status" aria-live="polite">Illustrative stable run loaded.</span></div>
       <div style="margin-top:22px"><div class="rank"><span class="rank-num">01</span><strong>candidate</strong><div class="bar" aria-label="candidate 100 percent pass rate"><i style="width:100%"></i></div><span>100%</span></div><div class="rank"><span class="rank-num">02</span><strong>baseline</strong><div class="bar" aria-label="baseline 83 percent pass rate"><i style="width:83%"></i></div><span>83%</span></div></div>
       <details><summary>What does this page prove?</summary><p>Only that the visual language explains the scorecard. These numbers are illustrative browser data; the page does not run a command, evaluate a model, or certify a candidate. Generate the real receipt with the command below.</p></details>
     </section>
@@ -77,10 +83,16 @@
       <p>Install Agent Eval Kit, save a matrix plan, and inspect the JSON output in CI or an agent loop.</p>
       <div class="command"><code>agent-eval matrix plan.json</code><button class="copy" type="button" data-copy="agent-eval matrix plan.json">copy</button></div>
       <p id="copy-status" role="status" aria-live="polite"></p>
-      <div class="foot"><span>Source of truth: the emitted <code>agent-eval/matrix/v1</code> document.</span><a href="../README.md">Back to README</a></div>
+      <div class="foot"><span>Source of truth: the emitted <code>agent-eval/matrix/v1</code> document.</span><a href="https://github.com/jonah-ux/agent-eval-kit#readme">Back to README</a></div>
     </section>
   </main>
   <script>
+    const scenarios = { stable: ['100%', '18 ms', 'YES', 'Illustrative stable run loaded.'], flaky: ['67%', '31 ms', 'NO', 'Illustrative flaky run: inspect the unstable fixture.'], timeout: ['33%', 'timeout', 'NO', 'Illustrative timeout run: the ranking is now a warning sign.'] };
+    document.getElementById('run-scenario').addEventListener('click', () => {
+      const [pass, duration, stable, message] = scenarios[document.getElementById('scenario').value];
+      const cards = document.querySelectorAll('.score strong'); cards[0].textContent = pass; cards[1].textContent = duration; cards[2].textContent = stable;
+      document.getElementById('scenario-status').textContent = message;
+    });
     document.querySelectorAll('[data-copy]').forEach((button) => button.addEventListener('click', async () => {
       const status = document.getElementById('copy-status');
       try { await navigator.clipboard.writeText(button.dataset.copy); button.textContent = 'copied'; status.textContent = 'Command copied. Your terminal remains the boss.'; }
