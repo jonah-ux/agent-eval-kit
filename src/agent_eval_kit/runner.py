@@ -89,18 +89,20 @@ def _kill_process_group(process: subprocess.Popen[str]) -> None:
         pass
 
 
-def evaluate_fixture(fixture: Mapping[str, Any], command: str) -> dict[str, Any]:
-    """Run one command fixture and return an ``agent-eval/v1`` scorecard."""
+def _execute(
+    rendered_command: str,
+    timeout: float,
+    *,
+    cwd: str | os.PathLike[str] | None = None,
+    env: Mapping[str, str] | None = None,
+    stdin: Any = None,
+) -> dict[str, Any]:
+    """Run one shell command and capture its observable behavior.
 
-    fixture = _require_mapping(fixture, "fixture")
-    command = _require_nonempty_string(command, "command")
-    task = fixture.get("task", "")
-    if not isinstance(task, str):
-        raise ValueError("task must be a string")
-    expected = _expected_exit(fixture)
-    expected_stdout = _expected_stdout(fixture)
-    timeout = _timeout(fixture)
-    rendered_command = command.replace("{task}", shlex.quote(task))
+    Returns ``exit_code`` (``None`` on timeout), ``stdout``, ``stderr``,
+    ``timed_out`` and ``duration_ms``.  A timeout kills the whole process
+    group and is reported, not raised.
+    """
 
     started = time.monotonic()
     timed_out = False
@@ -108,9 +110,12 @@ def evaluate_fixture(fixture: Mapping[str, Any], command: str) -> dict[str, Any]
         rendered_command,
         shell=True,
         text=True,
+        stdin=stdin,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         start_new_session=True,
+        cwd=cwd,
+        env=None if env is None else dict(env),
     )
     try:
         stdout, stderr = process.communicate(timeout=timeout)
@@ -125,21 +130,64 @@ def evaluate_fixture(fixture: Mapping[str, Any], command: str) -> dict[str, Any]
         stdout = _text(stdout_after_kill if stdout_after_kill is not None else exc.stdout)
         stderr = _text(stderr_after_kill if stderr_after_kill is not None else exc.stderr)
 
-    duration_ms = round((time.monotonic() - started) * 1000)
+    return {
+        "exit_code": exit_code,
+        "stdout": stdout,
+        "stderr": stderr,
+        "timed_out": timed_out,
+        "duration_ms": round((time.monotonic() - started) * 1000),
+    }
+
+
+def _wilson(k: int, n: int, z: float = 1.96) -> list[float] | None:
+    """Return the Wilson score interval ``[lo, hi]`` for ``k`` of ``n``.
+
+    ``n == 0`` has no defined rate, so it returns ``None`` rather than a
+    misleading ``[0, 0]``.  Bounds are rounded to four decimals.
+    """
+
+    if isinstance(k, bool) or isinstance(n, bool) or not isinstance(k, int) or not isinstance(n, int):
+        raise ValueError("wilson k and n must be integers")
+    if n < 0 or k < 0 or k > n:
+        raise ValueError("wilson requires 0 <= k <= n")
+    if n == 0:
+        return None
+    p_hat = k / n
+    z2 = z * z
+    denominator = 1 + z2 / n
+    center = (p_hat + z2 / (2 * n)) / denominator
+    half = z * ((p_hat * (1 - p_hat) / n + z2 / (4 * n * n)) ** 0.5) / denominator
+    return [round(max(0.0, center - half), 4), round(min(1.0, center + half), 4)]
+
+
+def evaluate_fixture(fixture: Mapping[str, Any], command: str) -> dict[str, Any]:
+    """Run one command fixture and return an ``agent-eval/v1`` scorecard."""
+
+    fixture = _require_mapping(fixture, "fixture")
+    command = _require_nonempty_string(command, "command")
+    task = fixture.get("task", "")
+    if not isinstance(task, str):
+        raise ValueError("task must be a string")
+    expected = _expected_exit(fixture)
+    expected_stdout = _expected_stdout(fixture)
+    timeout = _timeout(fixture)
+    rendered_command = command.replace("{task}", shlex.quote(task))
+
+    execution = _execute(rendered_command, timeout)
     ok = (
-        not timed_out
-        and exit_code == expected
-        and all(fragment in stdout for fragment in expected_stdout)
+        not execution["timed_out"]
+        and execution["exit_code"] == expected
+        and all(fragment in execution["stdout"] for fragment in expected_stdout)
     )
     return {
         "schema": "agent-eval/v1",
         "ok": ok,
-        "exit_code": exit_code,
+        "exit_code": execution["exit_code"],
         "expected_exit": expected,
-        "duration_ms": duration_ms,
-        "stdout": stdout,
-        "stderr": stderr,
-        "timed_out": timed_out,
+        "duration_ms": execution["duration_ms"],
+        "stdout": execution["stdout"],
+        "stderr": execution["stderr"],
+        "timed_out": execution["timed_out"],
     }
 
 
