@@ -1,5 +1,6 @@
 import argparse
 import json
+from pathlib import Path
 
 from .runner import evaluate_fixture, evaluate_matrix, evaluate_receipt
 
@@ -29,29 +30,42 @@ def _parser():
     return parser
 
 
+def _load_json(path: str, label: str):
+    try:
+        with Path(path).open(encoding="utf-8") as handle:
+            return json.load(handle)
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        raise ValueError(f"{label} could not be read: {exc}") from exc
+
+
+def _error(message: str) -> dict[str, object]:
+    return {"schema": "agent-eval/error/v1", "ok": False, "error": message}
+
+
 def main(argv=None):
     args = _parser().parse_args(argv)
-    if args.action == "run":
-        with open(args.fixture, encoding="utf-8") as handle:
-            fixture = json.load(handle)
-        output = evaluate_fixture(fixture, args.cmd)
+    try:
+        if args.action == "run":
+            fixture = _load_json(args.fixture, "fixture")
+            output = evaluate_fixture(fixture, args.cmd)
+            print(json.dumps(output, indent=2, sort_keys=True))
+            return 0 if output["ok"] else 1
+
+        if args.action == "receipt":
+            receipt = _load_json(args.path, "receipt")
+            output = evaluate_receipt(
+                receipt,
+                expected_exit=args.expect_exit,
+                expected_stdout=args.expect_stdout,
+                require_integrity=args.require_integrity,
+            )
+            print(json.dumps(output, indent=2, sort_keys=True))
+            return 0 if output["ok"] else 1
+
+        plan = _load_json(args.plan, "matrix plan")
+        output = evaluate_matrix(plan)
         print(json.dumps(output, indent=2, sort_keys=True))
         return 0 if output["ok"] else 1
-
-    if args.action == "receipt":
-        with open(args.path, encoding="utf-8") as handle:
-            receipt = json.load(handle)
-        output = evaluate_receipt(
-            receipt,
-            expected_exit=args.expect_exit,
-            expected_stdout=args.expect_stdout,
-            require_integrity=args.require_integrity,
-        )
-        print(json.dumps(output, indent=2, sort_keys=True))
-        return 0 if output["ok"] else 1
-
-    with open(args.plan, encoding="utf-8") as handle:
-        plan = json.load(handle)
-    output = evaluate_matrix(plan)
-    print(json.dumps(output, indent=2, sort_keys=True))
-    return 0 if output["ok"] else 1
+    except (OSError, UnicodeError, ValueError) as exc:
+        print(json.dumps(_error(str(exc)), indent=2, sort_keys=True))
+        return 2
