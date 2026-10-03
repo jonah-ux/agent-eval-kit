@@ -89,6 +89,29 @@ def _kill_process_group(process: subprocess.Popen[str]) -> None:
         pass
 
 
+def _reap_process_group(pgid: int, *, grace_seconds: float = 2.0) -> None:
+    """SIGKILL every process left in ``pgid`` and wait until the group is empty.
+
+    The command runs with ``start_new_session=True``, so ``pgid`` is its own
+    session's group and never the evaluator's.  The guard below refuses to
+    signal the caller's group regardless.
+    """
+
+    if not hasattr(os, "killpg") or pgid <= 1 or pgid == os.getpgrp():
+        return
+    deadline = time.monotonic() + grace_seconds
+    while True:
+        try:
+            os.killpg(pgid, signal.SIGKILL)
+        except ProcessLookupError:
+            return
+        except PermissionError:
+            return
+        if time.monotonic() >= deadline:
+            return
+        time.sleep(0.01)
+
+
 def _execute(
     rendered_command: str,
     timeout: float,
@@ -97,13 +120,18 @@ def _execute(
     env: Mapping[str, str] | None = None,
     stdin: Any = None,
     input_text: str | None = None,
+    kill_group_on_exit: bool = False,
 ) -> dict[str, Any]:
     """Run one shell command and capture its observable behavior.
 
     Returns ``exit_code`` (``None`` on timeout), ``stdout``, ``stderr``,
     ``timed_out`` and ``duration_ms``.  A timeout kills the whole process
     group and is reported, not raised.  ``input_text``, when given, is written
-    to the command's stdin (and overrides ``stdin``).
+    to the command's stdin (and overrides ``stdin``).  With
+    ``kill_group_on_exit=True`` every process still in the command's process
+    group is killed after a normal exit too, so a background child cannot keep
+    acting after the command returns.  The default keeps the original
+    behavior for ``evaluate_fixture``.
     """
 
     started = time.monotonic()
@@ -124,6 +152,8 @@ def _execute(
         exit_code: int | None = process.returncode
         stdout = _text(stdout)
         stderr = _text(stderr)
+        if kill_group_on_exit:
+            _reap_process_group(process.pid)
     except subprocess.TimeoutExpired as exc:
         _kill_process_group(process)
         stdout_after_kill, stderr_after_kill = process.communicate()
@@ -131,6 +161,8 @@ def _execute(
         exit_code = None
         stdout = _text(stdout_after_kill if stdout_after_kill is not None else exc.stdout)
         stderr = _text(stderr_after_kill if stderr_after_kill is not None else exc.stderr)
+        if kill_group_on_exit:
+            _reap_process_group(process.pid)
 
     return {
         "exit_code": exit_code,
