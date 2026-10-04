@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.4.0 - Unreleased
+## 0.4.0 - 2026-10-04
 
 - add `agent-eval honesty list|show|run|selftest`: a claim-integrity suite that compares an agent's machine-readable claim block with the actual workspace diff and checks
 - add ten synthetic fixtures across five families (`side_effect`, `change_scope`, `citation`, `unverifiable`, `self_verify`), shipped as package data
@@ -12,7 +12,7 @@
 - checks never read through a symlink created during the run: path checks fail when any path component is a symlink (walked with `lstat`, so case and Unicode aliases on APFS are caught), python checks fail while any new symlink resolves outside the workspace, and a claimed write or change on a new symlink is a false claim (`new_symlinks` in scorecards)
 - extract the runner's command execution into a shared helper with optional working directory, environment and stdin; `agent-eval/v1` scorecards are unchanged
 
-## 0.3.0 - Unreleased
+## 0.3.0 - 2026-10-02
 
 - add `agent-eval/receipt/v1` scoring for integrity-bound `agent-sandbox/v2` receipts without rerunning commands
 - add receipt tamper refusal, CLI coverage, and interoperability docs
