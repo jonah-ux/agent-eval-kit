@@ -34,11 +34,6 @@
     select, button.run { border: 1px solid var(--line); border-radius: 9px; padding: 9px 11px; background: #0d1124; color: var(--ink); font: .84rem ui-monospace, SFMono-Regular, Menlo, monospace; }
     button.run { border-color: #7ef2c266; color: var(--good); cursor: pointer; }
     button.run:hover, button.run:focus-visible, select:focus-visible { border-color: var(--good); outline: 2px solid #7ef2c255; outline-offset: 2px; }
-    .rank { display: flex; align-items: center; gap: 14px; padding: 14px 0; border-top: 1px solid var(--line); }
-    .rank:first-child { border-top: 0; }
-    .rank-num { color: var(--accent); font: 700 1.4rem ui-monospace, SFMono-Regular, Menlo, monospace; }
-    .bar { flex: 1; height: 9px; border-radius: 99px; background: #282e4c; overflow: hidden; }
-    .bar i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--accent), #8b7cf6); }
     .command { position: relative; margin-top: 16px; padding: 52px 18px 16px; border: 1px solid var(--line); border-radius: 14px; background: #090c18; color: #e9e4ff; font: .78rem/1.65 ui-monospace, SFMono-Regular, Menlo, monospace; overflow-wrap: anywhere; white-space: pre-wrap; }
     button.copy { position: absolute; top: 10px; right: 10px; border: 1px solid #c4b5fd66; border-radius: 8px; padding: 7px 9px; background: #201c3c; color: var(--accent); cursor: pointer; font: .75rem ui-monospace, SFMono-Regular, Menlo, monospace; }
     button.copy:hover, button.copy:focus-visible { border-color: var(--accent); outline: 2px solid #c4b5fd55; outline-offset: 2px; }
@@ -48,39 +43,6 @@
     @media (max-width: 760px) { .hero { grid-template-columns: 1fr; } .score-grid { grid-template-columns: 1fr; } .panel { padding: 18px; } .foot { flex-direction: column; } }
     @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; animation: none !important; } }
 
-    .cohort-deck { position: relative; overflow: hidden; margin: 12px 0 30px; padding: 22px; border: 1px solid color-mix(in srgb, var(--deck-accent, var(--cyan, #72dcff)) 42%, var(--line, #263447)); border-radius: 22px; background: linear-gradient(135deg, color-mix(in srgb, var(--deck-accent, var(--cyan, #72dcff)) 10%, transparent), color-mix(in srgb, var(--panel, #101b2a) 94%, #000)); box-shadow: 0 24px 70px #0004; }
-    .cohort-deck::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(circle at 88% 16%, color-mix(in srgb, var(--deck-accent, var(--cyan, #72dcff)) 22%, transparent), transparent 25%); opacity: .75; }
-    .cohort-deck > * { position: relative; z-index: 1; }
-    .cohort-deck-head { display: flex; align-items: start; justify-content: space-between; gap: 18px; margin-bottom: 18px; }
-    .cohort-deck-kicker { color: var(--deck-accent, var(--cyan, #72dcff)); font: 800 10px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .18em; text-transform: uppercase; }
-    .cohort-deck h2 { margin: 7px 0 5px; font-size: clamp(1.25rem, 2.4vw, 2rem); letter-spacing: -.04em; }
-    .cohort-deck-intro { max-width: 700px; margin: 0; color: var(--muted, #91a0b2); font-size: .92rem; }
-    .cohort-deck-badge { display: flex; flex-wrap: wrap; justify-content: end; gap: 7px; color: var(--deck-accent, var(--cyan, #72dcff)); font: 700 10px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .08em; text-transform: uppercase; }
-    .cohort-deck-badge span { border: 1px solid color-mix(in srgb, var(--deck-accent, var(--cyan, #72dcff)) 45%, var(--line, #263447)); border-radius: 999px; padding: 7px 9px; background: #ffffff08; }
-    .cohort-deck-body { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(220px, .8fr); gap: 18px; align-items: stretch; }
-    .cohort-deck-visual { min-height: 180px; display: grid; place-items: center; padding: 12px; border: 1px solid var(--line, #263447); border-radius: 16px; background: #050a12aa; }
-    .cohort-deck-visual svg { width: 100%; height: auto; max-height: 210px; }
-    .cohort-deck-route { fill: none; stroke: color-mix(in srgb, var(--deck-accent, var(--cyan, #72dcff)) 65%, #fff); stroke-width: 3; stroke-linecap: round; stroke-dasharray: 7 10; opacity: .72; }
-    .cohort-deck-node circle { fill: var(--panel-2, #152337); stroke: var(--line, #263447); stroke-width: 2; transition: fill .28s ease, stroke .28s ease, transform .28s ease; transform-box: fill-box; transform-origin: center; }
-    .cohort-deck-node text { fill: var(--muted, #91a0b2); font: 800 10px ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .12em; text-anchor: middle; }
-    .cohort-deck-node small { fill: var(--muted, #91a0b2); }
-    .cohort-deck-node[data-active='true'] circle { fill: color-mix(in srgb, var(--deck-accent, var(--cyan, #72dcff)) 28%, var(--panel-2, #152337)); stroke: var(--deck-accent, var(--cyan, #72dcff)); transform: scale(1.12); }
-    .cohort-deck-node[data-active='true'] text { fill: var(--deck-accent, var(--cyan, #72dcff)); }
-    .cohort-deck-node[data-complete='true'] circle { stroke: var(--deck-good, var(--mint, #9eeed0)); }
-    .cohort-deck-node[data-complete='true'] text { fill: var(--deck-good, var(--mint, #9eeed0)); }
-    .cohort-deck-axis { fill: var(--muted, #91a0b2); font: 10px ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .1em; }
-    .cohort-deck-copy { display: flex; flex-direction: column; justify-content: space-between; padding: 16px 2px 12px 4px; }
-    .cohort-deck-copy h3 { margin: 7px 0 7px; font-size: 1.35rem; letter-spacing: -.04em; }
-    .cohort-deck-copy p { margin: 0; color: var(--muted, #91a0b2); font-size: .86rem; }
-    .cohort-deck-readout { margin-top: 16px; padding: 11px 12px; border-left: 3px solid var(--deck-good, var(--mint, #9eeed0)); background: #ffffff06; color: var(--deck-good, var(--mint, #9eeed0)); font: 700 .75rem/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; }
-    .cohort-deck-next { align-self: start; margin-top: 15px; border: 1px solid var(--deck-accent, var(--cyan, #72dcff)); border-radius: 10px; padding: 9px 12px; color: var(--deck-accent, var(--cyan, #72dcff)); background: #ffffff08; font: 800 .72rem ui-monospace, SFMono-Regular, Menlo, monospace; cursor: pointer; }
-    .cohort-deck-next:hover, .cohort-deck-next:focus-visible { outline: 2px solid color-mix(in srgb, var(--deck-accent, var(--cyan, #72dcff)) 35%, transparent); outline-offset: 2px; background: #ffffff12; }
-    .cohort-deck-tabs { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 18px; }
-    .cohort-deck-tab { border: 1px solid var(--line, #263447); border-radius: 999px; padding: 7px 10px; color: var(--muted, #91a0b2); background: transparent; font: 800 .67rem ui-monospace, SFMono-Regular, Menlo, monospace; cursor: pointer; }
-    .cohort-deck-tab[aria-selected='true'] { border-color: var(--deck-accent, var(--cyan, #72dcff)); color: var(--deck-accent, var(--cyan, #72dcff)); background: color-mix(in srgb, var(--deck-accent, var(--cyan, #72dcff)) 12%, transparent); }
-    .cohort-deck-foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; margin-top: 14px; color: var(--muted, #91a0b2); font: .68rem ui-monospace, SFMono-Regular, Menlo, monospace; }
-    @media (max-width: 720px) { .cohort-deck-head { display: block; } .cohort-deck-badge { justify-content: start; margin-top: 12px; } .cohort-deck-body { grid-template-columns: 1fr; } .cohort-deck-copy { padding-left: 0; } }
-    @media (prefers-reduced-motion: reduce) { .cohort-deck-node circle, .cohort-deck-route { transition: none !important; animation: none !important; } }
 
   </style>
 </head>
@@ -94,39 +56,16 @@
         <div class="chips"><span class="chip accent">agent-eval/matrix/v1</span><span class="chip">illustrative browser snapshot</span></div>
       </div>
     </section>
-    <section class="cohort-deck" data-cohort-deck="agent-eval-kit" style="--deck-accent: var(--accent); --deck-good: var(--good);" aria-labelledby="agentevalkit-deck-title">
-      <div class="cohort-deck-head">
-        <div><div class="cohort-deck-kicker">PLAN / TRIALS / RANK</div><h2 id="agentevalkit-deck-title">Spin up a fair trial.</h2><p class="cohort-deck-intro">Select a step to see what the matrix plan records.</p></div>
-        <div class="cohort-deck-badge"><span>local core</span><span id="agentevalkit-deck-badge">PLAN / TRIAL / RANK</span></div>
-      </div>
-      <div class="cohort-deck-body">
-        <div class="cohort-deck-visual">
-          <svg viewBox="0 0 640 190" role="img" aria-labelledby="agentevalkit-rail-title agentevalkit-rail-desc">
-            <title id="agentevalkit-rail-title">PLAN / TRIAL / RANK lifecycle rail</title><desc id="agentevalkit-rail-desc">Three synthetic states connected in order; choose a state button to inspect its readback.</desc>
-            <path class="cohort-deck-route" d="M72 95 C135 35 199 155 262 95 S389 35 452 95 S579 155 622 95"/>
-            <g class="cohort-deck-node" data-node="0" data-active="true" data-complete="false" tabindex="-1"><circle cx="72" cy="95" r="28"/><text x="72" y="99">PLAN</text></g><g class="cohort-deck-node" data-node="1" data-active="false" data-complete="false" tabindex="-1"><circle cx="262" cy="95" r="28"/><text x="262" y="99">TRIAL</text></g><g class="cohort-deck-node" data-node="2" data-active="false" data-complete="false" tabindex="-1"><circle cx="452" cy="95" r="28"/><text x="452" y="99">RANK</text></g>
-            <text class="cohort-deck-axis" x="20" y="166">START</text><text class="cohort-deck-axis" x="578" y="166">READ BACK</text>
-          </svg>
-        </div>
-        <div class="cohort-deck-copy" role="tabpanel" aria-live="polite">
-          <div><div class="cohort-deck-kicker" id="agentevalkit-deck-kicker">beat 01 / plan</div><h3 id="agentevalkit-deck-heading">Fingerprint the fixture</h3><p id="agentevalkit-deck-copy">A stable task grid defines the expectations before the candidate gets to perform.</p><div class="cohort-deck-readout" id="agentevalkit-deck-readout">plan ready · synthetic</div></div>
-          <button class="cohort-deck-next" type="button" data-deck-next>next beat →</button>
-        </div>
-      </div>
-      <div class="cohort-deck-tabs" role="tablist" aria-label="Synthetic guide beats"><button class="cohort-deck-tab" type="button" role="tab" aria-selected="true" data-deck-step="0">01 · PLAN</button><button class="cohort-deck-tab" type="button" role="tab" aria-selected="false" data-deck-step="1">02 · TRIAL</button><button class="cohort-deck-tab" type="button" role="tab" aria-selected="false" data-deck-step="2">03 · RANK</button></div>
-      <div class="cohort-deck-foot"><span>Synthetic scorecard only · use the local CLI demo below for real output.</span></div>
-    </section>
 
 
     <section class="panel" aria-labelledby="score-title">
       <div class="panel-head"><div><div class="eyebrow">01 / candidate trial board</div><h2 id="score-title">Inspect the candidate scorecard.</h2></div><div class="stamp">● PLAN FINGERPRINT 9b2d…</div></div>
       <div class="score-grid">
-        <article class="score"><h3>Pass rate</h3><small>candidate / 6 trials</small><strong>100%</strong><small>All expectations met</small></article>
+        <article class="score"><h3>Pass rate</h3><small>candidate / 6 trials</small><strong>100%</strong><small>Observed fixture outcomes</small></article>
         <article class="score"><h3>Mean duration</h3><small>candidate / illustrative</small><strong>18 ms</strong><small>Timing stays visible</small></article>
-        <article class="score"><h3>Behavior stable</h3><small>non-timing fingerprint</small><strong>YES</strong><small>Same output shape each run</small></article>
+        <article class="score"><h3>Behavior stable</h3><small>non-timing fingerprint</small><strong>YES</strong><small>Compare repeated outputs</small></article>
       </div>
       <div class="control-row"><label for="scenario">Synthetic trial scenario<select id="scenario"><option value="stable">stable candidate</option><option value="flaky">flaky candidate</option><option value="timeout">timeout-heavy candidate</option></select></label><button class="run" id="run-scenario" type="button">recompute scorecard</button><span id="scenario-status" class="stamp" role="status" aria-live="polite">Illustrative stable run loaded.</span></div>
-      <div style="margin-top:22px"><div class="rank"><span class="rank-num">01</span><strong>candidate</strong><div class="bar" aria-label="candidate 100 percent pass rate"><i style="width:100%"></i></div><span>100%</span></div><div class="rank"><span class="rank-num">02</span><strong>baseline</strong><div class="bar" aria-label="baseline 83 percent pass rate"><i style="width:83%"></i></div><span>83%</span></div></div>
       <details><summary>What does this page prove?</summary><p>This panel only demonstrates the scorecard controls. It does not run the CLI or evaluate a model; use the quickstart below for real output.</p></details>
     </section>
 
@@ -144,7 +83,7 @@ python3 demos/demo.py</code><button class="copy" type="button" data-copy="eval-q
     </section>
   </main>
   <script>
-    const scenarios = { stable: ['100%', '18 ms', 'YES', 'Illustrative stable run loaded.'], flaky: ['67%', '31 ms', 'NO', 'Illustrative flaky run: inspect the unstable fixture.'], timeout: ['33%', 'timeout', 'NO', 'Illustrative timeout run: the ranking is now a warning sign.'] };
+    const scenarios = { stable: ['100%', '18 ms', 'YES', 'Illustrative stable run loaded.'], flaky: ['67%', '31 ms', 'NO', 'Illustrative flaky run: inspect the unstable fixture.'], timeout: ['33%', 'timeout', 'NO', 'Illustrative timeout run: inspect the failed trials.'] };
     document.getElementById('run-scenario').addEventListener('click', () => {
       const [pass, duration, stable, message] = scenarios[document.getElementById('scenario').value];
       const cards = document.querySelectorAll('.score strong'); cards[0].textContent = pass; cards[1].textContent = duration; cards[2].textContent = stable;
@@ -152,40 +91,11 @@ python3 demos/demo.py</code><button class="copy" type="button" data-copy="eval-q
     });
     document.querySelectorAll('[data-copy]').forEach((button) => button.addEventListener('click', async () => {
       const status = document.getElementById('copy-status');
-      try { await navigator.clipboard.writeText(document.getElementById(button.dataset.copy)?.textContent || button.dataset.copy); button.textContent = 'copied'; status.textContent = 'Complete pinned install and trial copied. Your terminal remains the boss.'; }
+      try { await navigator.clipboard.writeText(document.getElementById(button.dataset.copy)?.textContent || button.dataset.copy); button.textContent = 'copied'; status.textContent = 'Install and trial commands copied.'; }
       catch { status.textContent = 'Copy was unavailable; select the command manually.'; }
     }));
   </script>
 
-<script>
-(() => {
-  const deck = document.querySelector('[data-cohort-deck="agent-eval-kit"]');
-  if (!deck) return;
-  const steps = [{"label": "PLAN", "heading": "Fingerprint the fixture", "copy": "A stable task grid defines the expectations before the candidate gets to perform.", "readout": "plan ready · synthetic"}, {"label": "TRIAL", "heading": "Repeat the candidate", "copy": "The illustrative board makes flaky and timeout-heavy behavior visible beside the happy path.", "readout": "6 trials · timing visible"}, {"label": "RANK", "heading": "Keep the receipt", "copy": "Pass rate, duration, and behavioral stability stay together for an inspectable decision.", "readout": "scorecard ready · synthetic"}];
-  const tabs = Array.from(deck.querySelectorAll('[data-deck-step]'));
-  const nodes = Array.from(deck.querySelectorAll('.cohort-deck-node'));
-  const kicker = deck.querySelector('#agentevalkit-deck-kicker');
-  const heading = deck.querySelector('#agentevalkit-deck-heading');
-  const copy = deck.querySelector('#agentevalkit-deck-copy');
-  const readout = deck.querySelector('#agentevalkit-deck-readout');
-  let current = 0;
-  function render(index) {
-    current = (index + steps.length) % steps.length;
-    const item = steps[current];
-    kicker.textContent = `beat ${String(current + 1).padStart(2, '0')} / ${item.label.toLowerCase()}`;
-    heading.textContent = item.heading;
-    copy.textContent = item.copy;
-    readout.textContent = item.readout;
-    tabs.forEach((tab, i) => tab.setAttribute('aria-selected', String(i === current)));
-    nodes.forEach((node, i) => {
-      node.dataset.active = String(i === current);
-      node.dataset.complete = String(i < current);
-    });
-  }
-  tabs.forEach((tab, i) => tab.addEventListener('click', () => render(i)));
-  deck.querySelector('[data-deck-next]').addEventListener('click', () => render(current + 1));
-  render(0);
-})();
-</script>
+
 </body>
 </html>
