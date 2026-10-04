@@ -26,6 +26,18 @@ python3 -m pip install .
 python3 demos/demo.py
 ```
 
+To install a published release instead of a checkout, download the wheel and `SHA256SUMS` from
+[GitHub Releases](https://github.com/jonah-ux/agent-eval-kit/releases), check the hash, and install it:
+
+```bash
+v=0.4.0
+curl -LO https://github.com/jonah-ux/agent-eval-kit/releases/download/v$v/agent_eval_kit-$v-py3-none-any.whl
+curl -LO https://github.com/jonah-ux/agent-eval-kit/releases/download/v$v/SHA256SUMS
+grep "agent_eval_kit-$v-py3-none-any.whl" SHA256SUMS | shasum -a 256 -c -
+python3 -m pip install "agent_eval_kit-$v-py3-none-any.whl"
+agent-eval honesty selftest
+```
+
 The demo runs one fixture and prints an `agent-eval/v1` scorecard. For a real fixture:
 
 ```json
